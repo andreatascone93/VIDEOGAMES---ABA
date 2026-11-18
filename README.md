@@ -6,7 +6,7 @@ Piccoli videogiochi da usare dentro un intervento di analisi del comportamento a
 
 | Gioco | Comportamento target | Stato |
 | --- | --- | --- |
-| [Pico e la pausa](giochi/pausa/index.html) | Prendersi una pausa quando sale la rabbia (autoregolazione) | Prototipo |
+| [Il gioco della pausa](giochi/pausa/index.html) | Prendersi una pausa quando sale la rabbia (autoregolazione) | Prototipo |
 
 ## Come provarlo
 

@@ -12,13 +12,15 @@ Il documento completo, con fondamenti in letteratura e diagramma, è qui: [Archi
 - **Registro dati**: `localStorage`, una voce per ogni occasione.
 - **Area terapista**: impostazioni, grafico per sessione, consiglio sul criterio di padronanza, esportazione CSV.
 
-## Gioco "Pico e la pausa"
+## Il gioco della pausa
 
 | Livello | Nome | Procedura |
 | --- | --- | --- |
-| 1 | Guardo Pico | Video modeling: Pico perde, si arrabbia, fa la pausa, si calma, diventa più forte, sblocca un gioco |
-| 2 | Aiuto Pico | Quando il termometro diventa arancione arriva l'aiuto (completo o parziale) |
+| 1 | Guardo Leo | Video modeling: Leo perde, si arrabbia, fa la pausa, si calma, diventa più forte, sblocca un gioco |
+| 2 | Aiuto Leo | Quando il termometro diventa arancione arriva l'aiuto (completo o parziale) |
 | 3 | Decido io | Nessun aiuto; aiuto parziale ritardato se non risponde entro N secondi |
 | 4 | Sono forte | Più sconfitte, pause più brevi (tolleranza alla frustrazione) |
 
 Tipi di occasione registrati: `indipendente`, `con_aiuto`, `anticipata` (pausa in zona gialla, contata come indipendente), `problema` (esplosione in zona rossa, estinzione), `fuori_contesto` (pausa con termometro verde, non rinforzata).
+
+Personalizzazione per il primo caso: personaggio umano (Leo, nome modificabile), riquadro "Segnali della rabbia" scritto in zona gialla, arancione e rossa per rimarcare il riconoscimento, giochi bonus di corsa (raccogliere stelle cambiando corsia) e di karate (colpire bersagli), senza sconfitte né pressione di tempo.
