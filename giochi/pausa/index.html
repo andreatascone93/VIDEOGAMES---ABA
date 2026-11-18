@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Pico e la pausa</title>
+<style>
+  :root {
+    --bg: #eaf4fb; --ink: #23324a; --quiet: #5b6b82; --card: #ffffff;
+    --verde: #4caf6e; --giallo: #f2c230; --arancione: #f28c28; --rosso: #e04848;
+    --blu: #3b82c4; --viola: #8a63d2;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "Nunito", "Segoe UI", system-ui, sans-serif; overflow: hidden; user-select: none; }
+  .screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+  .screen.active { display: flex; }
+  h1 { font-size: clamp(28px, 5vw, 48px); margin: 8px 0; }
+  p.lead { font-size: clamp(18px, 2.6vw, 26px); color: var(--quiet); margin: 4px 0 18px; text-align: center; max-width: 800px; }
+  button { font-family: inherit; cursor: pointer; border: none; }
+  .big { font-size: clamp(22px, 3.4vw, 34px); font-weight: 800; padding: 18px 40px; border-radius: 999px; color: #fff;
+    box-shadow: 0 6px 0 rgba(0,0,0,.18); transition: transform .08s; }
+  .big:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  .big:disabled { opacity: .4; }
+  .b-blu { background: var(--blu); } .b-verde { background: var(--verde); } .b-viola { background: var(--viola); }
+  .gear { position: absolute; top: 12px; right: 14px; background: transparent; font-size: 28px; opacity: .45; }
+
+  /* game layout */
+  #game { justify-content: flex-start; }
+  .topbar { width: 100%; display: flex; justify-content: space-between; align-items: center; font-size: clamp(18px, 2.4vw, 26px); font-weight: 700; }
+  .stars { letter-spacing: 2px; }
+  .arena { flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; gap: 4vw; }
+  .thermo { width: 70px; height: min(52vh, 380px); border-radius: 36px; background: #fff; border: 4px solid #c9d6e3; position: relative; overflow: hidden; flex-shrink: 0; }
+  .thermo .fill { position: absolute; left: 0; right: 0; bottom: 0; height: 10%; transition: height .6s, background .6s; }
+  .thermo-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; font-weight: 700; color: var(--quiet); }
+  .scene { position: relative; width: min(52vw, 520px); height: min(56vh, 420px); background: #fff; border-radius: 28px; box-shadow: 0 4px 0 #c9d6e3; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; }
+  .pico { width: 220px; height: 220px; transform-origin: 50% 100%; transition: transform .8s; margin-bottom: 20px; position: relative; z-index: 2; }
+  .pico.shake { animation: shake .12s linear infinite; }
+  @keyframes shake { 0%{translate:-6px 0} 50%{translate:6px 0} 100%{translate:-6px 0} }
+  .tower { position: absolute; right: 40px; bottom: 20px; width: 70px; height: 220px; z-index: 1; }
+  .block { position: absolute; left: 5px; width: 60px; height: 40px; border-radius: 8px; transition: transform .7s cubic-bezier(.5,-0.3,.7,1.4), opacity .7s; }
+  .bubble-say { position: absolute; top: 18px; left: 50%; transform: translateX(-50%); background: #fff8d9; border: 3px solid #f0dc8c; border-radius: 20px;
+    padding: 10px 18px; font-size: clamp(18px, 2.4vw, 24px); font-weight: 700; max-width: 90%; text-align: center; z-index: 3; display: none; }
+  .controls { display: flex; gap: 4vw; margin: 10px 0 6px; }
+  #btnPausa { background: var(--verde); position: relative; }
+  #btnPausa.flash { animation: flash 0.8s ease-in-out infinite; }
+  @keyframes flash { 0%,100% { box-shadow: 0 6px 0 rgba(0,0,0,.18), 0 0 0 0 rgba(76,175,110,.7);} 50% { box-shadow: 0 6px 0 rgba(0,0,0,.18), 0 0 0 22px rgba(76,175,110,0);} }
+  .hand { position: absolute; font-size: 54px; right: -30px; top: -40px; display: none; animation: point 0.8s ease-in-out infinite; }
+  @keyframes point { 0%,100% { transform: translate(0,0);} 50% { transform: translate(-10px,10px);} }
+  .next { position: absolute; bottom: 24px; right: 24px; }
+
+  /* calm corner */
+  #calm { background: #e5f5ea; }
+  .breath { width: 160px; height: 160px; border-radius: 50%; background: radial-gradient(circle, #9ad7b0, #4caf6e); transition: transform 3s ease-in-out; margin: 20px; }
+  .breath-text { font-size: clamp(26px, 4vw, 40px); font-weight: 800; color: #2f7a4b; min-height: 1.3em; }
+
+  /* bonus */
+  .choices { display: flex; gap: 4vw; flex-wrap: wrap; justify-content: center; }
+  .choice { background: #fff; border-radius: 28px; width: min(38vw, 300px); padding: 24px; font-size: clamp(20px, 2.8vw, 28px); font-weight: 800; box-shadow: 0 6px 0 #c9d6e3; color: var(--ink); }
+  .choice .ico { font-size: 80px; display: block; }
+  #play { background: #1e2a44; }
+  #play .timer { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 24px; font-weight: 800; z-index: 5; }
+  .bub { position: absolute; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #ffffff, #7cc6ff 40%, #3b82c4); opacity: .9; }
+  .spark { position: absolute; width: 10px; height: 10px; border-radius: 50%; pointer-events: none; }
+
+  /* therapist */
+  #therapist { justify-content: flex-start; overflow-y: auto; background: #f7f9fc; align-items: stretch; padding: 20px 28px; }
+  #therapist > * { flex-shrink: 0; }
+  #therapist h2 { margin: 18px 0 8px; font-size: 22px; }
+  .form { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px 24px; }
+  .form label { display: flex; flex-direction: column; font-size: 15px; color: var(--quiet); gap: 4px; }
+  .form input, .form select { font-size: 18px; padding: 8px; border-radius: 8px; border: 1px solid #c9d6e3; font-family: inherit; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; background: #fff; }
+  th, td { border-bottom: 1px solid #e3e9f0; padding: 8px; text-align: left; }
+  th { background: #eef3f8; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+  .small { font-size: 16px; padding: 10px 18px; border-radius: 10px; background: var(--blu); color: #fff; font-weight: 700; }
+  .small.grey { background: #8a97a8; } .small.red { background: var(--rosso); }
+  .note { font-size: 14px; color: var(--quiet); }
+  .advice { background: #fff8d9; border: 1px solid #f0dc8c; padding: 10px 14px; border-radius: 10px; font-size: 16px; }
+  #chart { background: #fff; border: 1px solid #e3e9f0; border-radius: 8px; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; z-index: 50; }
+  .modal.active { display: flex; }
+  .modal .box { background: #fff; padding: 24px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 280px; }
+  .modal input { font-size: 28px; text-align: center; padding: 8px; letter-spacing: 8px; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<section id="home" class="screen active">
+  <button class="gear" id="gearBtn" aria-label="Area terapista">⚙️</button>
+  <svg id="picoHome" class="pico" viewBox="0 0 220 220"></svg>
+  <h1 id="homeTitle">Pico e la pausa</h1>
+  <p class="lead" id="homeLead"></p>
+  <button class="big b-blu" id="startBtn">Iniziamo!</button>
+</section>
+
+<!-- GAME -->
+<section id="game" class="screen">
+  <div class="topbar">
+    <span id="levelLabel"></span>
+    <span class="stars" id="starsLabel"></span>
+  </div>
+  <div class="arena">
+    <div class="thermo-wrap">
+      <div class="thermo"><div class="fill" id="thermoFill"></div></div>
+      <span>Rabbia</span>
+    </div>
+    <div class="scene" id="scene">
+      <div class="bubble-say" id="say"></div>
+      <svg id="pico" class="pico" viewBox="0 0 220 220"></svg>
+      <div class="tower" id="tower"></div>
+    </div>
+  </div>
+  <div class="controls" id="controls">
+    <button class="big b-blu" id="btnGioca">▶ Gioca</button>
+    <button class="big" id="btnPausa">🌿 Pausa<span class="hand" id="hand">👆</span></button>
+  </div>
+  <button class="big b-viola next" id="btnNext" style="display:none">Avanti ▶</button>
+</section>
+
+<!-- CALM CORNER -->
+<section id="calm" class="screen">
+  <h1>L'angolo calmo</h1>
+  <div class="breath" id="breath"></div>
+  <div class="breath-text" id="breathText"></div>
+  <svg id="picoCalm" class="pico" viewBox="0 0 220 220" style="width:150px;height:150px"></svg>
+</section>
+
+<!-- REWARD -->
+<section id="reward" class="screen">
+  <svg id="picoReward" class="pico" viewBox="0 0 220 220"></svg>
+  <h1 id="rewardTitle"></h1>
+  <p class="lead" id="rewardLead"></p>
+  <div class="choices">
+    <button class="choice" data-game="bolle"><span class="ico">🫧</span>Scoppia le bolle</button>
+    <button class="choice" data-game="fuochi"><span class="ico">🎆</span>Fuochi d'artificio</button>
+  </div>
+</section>
+
+<!-- BONUS PLAY -->
+<section id="play" class="screen">
+  <div class="timer" id="playTimer"></div>
+</section>
+
+<!-- END -->
+<section id="end" class="screen">
+  <svg id="picoEnd" class="pico" viewBox="0 0 220 220"></svg>
+  <h1>Bravissimo!</h1>
+  <p class="lead" id="endLead"></p>
+  <button class="big b-blu" id="endBtn">Fine</button>
+</section>
+
+<!-- THERAPIST -->
+<section id="therapist" class="screen">
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <h1 style="font-size:28px">Area terapista</h1>
+    <button class="small grey" id="closeTher">Chiudi</button>
+  </div>
+  <h2>Impostazioni della prossima sessione</h2>
+  <div class="form" id="form"></div>
+  <div class="row"><button class="small" id="saveCfg">Salva impostazioni</button><span class="note" id="savedNote"></span></div>
+  <h2>Andamento</h2>
+  <div id="advice"></div>
+  <svg id="chart" width="100%" viewBox="0 0 760 220"></svg>
+  <p class="note">Percentuale di pause indipendenti sulle occasioni (termometro arancione) per sessione. Linea tratteggiata: criterio di padronanza.</p>
+  <h2>Sessioni</h2>
+  <div id="sessTable"></div>
+  <div class="row">
+    <button class="small" id="exportCsv">Esporta CSV</button>
+    <button class="small red" id="clearData">Cancella tutti i dati</button>
+  </div>
+  <p class="note">I dati restano solo su questo dispositivo. Non inserire il nome reale del bambino.</p>
+</section>
+
+<div class="modal" id="pinModal"><div class="box">
+  <strong>PIN terapista</strong>
+  <input id="pinInput" type="password" inputmode="numeric" maxlength="6">
+  <span class="note" id="pinMsg">PIN iniziale: 1234 (cambialo nelle impostazioni)</span>
+  <div class="row"><button class="small" id="pinOk">Entra</button><button class="small grey" id="pinCancel">Annulla</button></div>
+</div></div>
+
+<div class="modal" id="confirmModal"><div class="box">
+  <strong id="confirmText"></strong>
+  <div class="row"><button class="small red" id="confirmYes">Sì</button><button class="small grey" id="confirmNo">No</button></div>
+</div></div>
+
+<script>
+/* =====================================================================
+   CONTINGENZE DEL GIOCO (modello A-B-C, vedi documento di architettura)
+   Il motore legge queste regole. Modificarle qui o dall'area terapista.
+   ===================================================================== */
+const GAME = {
+  id: 'pausa',
+  titolo: 'Pico e la pausa',
+  contingenze: {
+    MO: 'Sconfitte ripetute nel gioco della torre: ogni sconfitta alza la rabbia di 1',
+    SD: 'Termometro nella zona arancione (livello 3 su 4) e segnali del corpo di Pico',
+    rispostaTarget: 'Toccare il pulsante Pausa e andare nell\'angolo calmo',
+    rispostaProblema: 'Continuare a giocare in zona arancione fino all\'esplosione (rosso)',
+    conseguenzaTarget: 'Calma (termometro a zero), Pico più forte, una stella, accesso a un gioco a scelta',
+    conseguenzaProblema: 'Estinzione: il gioco si ferma, nessuna stella, nessun gioco bonus; si riparte',
+    pausaFuoriContesto: 'Pausa con termometro verde: nessun rinforzo (addestramento alla discriminazione)'
+  },
+  livelli: {
+    1: { nome: 'Guardo Pico', descr: 'Modeling: Pico fa la pausa da solo' },
+    2: { nome: 'Aiuto Pico', descr: 'Aiuto al momento giusto (completo o parziale)' },
+    3: { nome: 'Decido io', descr: 'Nessun aiuto; aiuto ritardato se non risponde' },
+    4: { nome: 'Sono forte', descr: 'Più sconfitte e pause più brevi (tolleranza)' }
+  }
+};
+
+const DEFAULT_CFG = {
+  nome: 'Pico', livello: 1, aiuto: 'completo', prove: 5, probPerdere: 0.75,
+  respiri: 3, secondiBonus: 25, secondiAiutoRitardato: 10, criterio: 80, sessioniCriterio: 3,
+  voce: true, pin: '1234'
+};
+const STORE = 'giochiAba.pausa.v1';
+let db = load();
+function load() {
+  try { const d = JSON.parse(localStorage.getItem(STORE)); if (d && d.cfg) { d.cfg = { ...DEFAULT_CFG, ...d.cfg }; return d; } } catch (e) {}
+  return { cfg: { ...DEFAULT_CFG }, sessions: [] };
+}
+function save() { localStorage.setItem(STORE, JSON.stringify(db)); }
+const cfg = () => db.cfg;
+
+/* ---------- utility ---------- */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id)); }
+let audioCtx;
+function tone(freq, dur = 0.15, type = 'sine', vol = 0.15) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.value = vol;
+    o.connect(g); g.connect(audioCtx.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur); o.stop(audioCtx.currentTime + dur);
+  } catch (e) {}
+}
+function speak(text) {
+  if (!cfg().voce || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'it-IT'; u.rate = 0.95; speechSynthesis.speak(u);
+}
+function say(text, speakIt = true) {
+  const el = $('say'); el.textContent = text; el.style.display = text ? 'block' : 'none';
+  if (text && speakIt) speak(text);
+}
+
+/* ---------- Pico ---------- */
+const MOODS = {
+  felice:    { body: '#6ec1e4', cheek: '#ffb3c1', mouth: 'M80 140 Q110 168 140 140', brow: '' },
+  normale:   { body: '#6ec1e4', cheek: '#ffc9d3', mouth: 'M85 145 Q110 152 135 145', brow: '' },
+  seccato:   { body: '#8cc0d8', cheek: '#ff9fae', mouth: 'M88 150 L132 148', brow: 'M70 82 L98 90 M150 82 L122 90' },
+  arrabbiato:{ body: '#d9a07a', cheek: '#ff7a7a', mouth: 'M85 155 Q110 138 135 155', brow: 'M68 78 L100 94 M152 78 L120 94' },
+  furioso:   { body: '#e06a5a', cheek: '#ff4d4d', mouth: 'M80 158 Q110 130 140 158 Z', brow: 'M64 74 L102 98 M156 74 L118 98' },
+  calmo:     { body: '#7fd3a5', cheek: '#ffc9d3', mouth: 'M88 142 Q110 156 132 142', brow: '', closed: true }
+};
+function drawPico(svgId, mood = 'normale', energia = 0) {
+  const m = MOODS[mood], svg = $(svgId);
+  const eyes = m.closed
+    ? '<path d="M78 108 Q88 116 98 108 M122 108 Q132 116 142 108" stroke="#23324a" stroke-width="5" fill="none" stroke-linecap="round"/>'
+    : '<circle cx="88" cy="108" r="11" fill="#23324a"/><circle cx="132" cy="108" r="11" fill="#23324a"/><circle cx="92" cy="104" r="4" fill="#fff"/><circle cx="136" cy="104" r="4" fill="#fff"/>';
+  const fists = (mood === 'arrabbiato' || mood === 'furioso')
+    ? '<circle cx="28" cy="150" r="16" fill="' + m.body + '" stroke="#23324a" stroke-width="3"/><circle cx="192" cy="150" r="16" fill="' + m.body + '" stroke="#23324a" stroke-width="3"/>'
+    : '<ellipse cx="30" cy="140" rx="14" ry="24" fill="' + m.body + '" stroke="#23324a" stroke-width="3" transform="rotate(20 30 140)"/><ellipse cx="190" cy="140" rx="14" ry="24" fill="' + m.body + '" stroke="#23324a" stroke-width="3" transform="rotate(-20 190 140)"/>';
+  const steam = mood === 'furioso' ? '<text x="20" y="40" font-size="34">💢</text><text x="160" y="40" font-size="34">💨</text>' : (mood === 'arrabbiato' ? '<text x="160" y="44" font-size="28">💢</text>' : '');
+  const cape = energia >= 3 ? '<path d="M60 120 L30 210 L190 210 L160 120 Z" fill="#e04848" opacity=".85"/>' : '';
+  const crown = energia >= 5 ? '<text x="88" y="38" font-size="40">⭐</text>' : '';
+  svg.innerHTML = cape + fists +
+    '<ellipse cx="110" cy="130" rx="78" ry="80" fill="' + m.body + '" stroke="#23324a" stroke-width="4"/>' +
+    '<ellipse cx="72" cy="132" rx="12" ry="8" fill="' + m.cheek + '"/><ellipse cx="148" cy="132" rx="12" ry="8" fill="' + m.cheek + '"/>' +
+    eyes + (m.brow ? '<path d="' + m.brow + '" stroke="#23324a" stroke-width="6" stroke-linecap="round"/>' : '') +
+    '<path d="' + m.mouth + '" stroke="#23324a" stroke-width="5" fill="' + (m.mouth.endsWith('Z') ? '#7a2a2a' : 'none') + '" stroke-linecap="round"/>' +
+    steam + crown;
+  svg.style.transform = 'scale(' + Math.min(1 + energia * 0.05, 1.3) + ')';
+}
+
+/* ---------- stato di gioco ---------- */
+const ZONES = [
+  { name: 'verde', color: 'var(--verde)', mood: 'felice' },
+  { name: 'verde', color: 'var(--verde)', mood: 'normale' },
+  { name: 'giallo', color: 'var(--giallo)', mood: 'seccato' },
+  { name: 'arancione', color: 'var(--arancione)', mood: 'arrabbiato' },
+  { name: 'rosso', color: 'var(--rosso)', mood: 'furioso' }
+];
+const SD_LEVEL = 3;
+let S = null; // stato della sessione
+
+function newSession() {
+  const c = cfg();
+  S = {
+    id: Date.now(), start: new Date().toISOString(), livello: Number(c.livello), aiuto: c.aiuto,
+    rabbia: 0, energia: 0, stelle: 0, trials: [], trial: null, busy: false, delayTimer: null
+  };
+}
+function setThermo() {
+  const z = ZONES[S.rabbia];
+  $('thermoFill').style.height = (10 + S.rabbia * 22.5) + '%';
+  $('thermoFill').style.background = z.color;
+  drawPico('pico', z.mood, S.energia);
+}
+function updateTop() {
+  const L = GAME.livelli[S.livello];
+  $('levelLabel').textContent = 'Livello ' + S.livello + ': ' + L.nome;
+  $('starsLabel').textContent = '⭐'.repeat(S.stelle) || ' ';
+}
+function buildTower() {
+  const t = $('tower'); t.innerHTML = '';
+  ['#f28c28', '#3b82c4', '#8a63d2', '#4caf6e'].forEach((col, i) => {
+    const b = document.createElement('div'); b.className = 'block'; b.style.background = col;
+    b.style.bottom = (i * 42) + 'px'; b.style.opacity = 0; t.appendChild(b);
+  });
+}
+function setPrompt(kind) { // 'completo' | 'parziale' | null
+  $('btnPausa').classList.toggle('flash', !!kind);
+  $('hand').style.display = kind === 'completo' ? 'block' : 'none';
+}
+function enable(on) { $('btnGioca').disabled = !on; $('btnPausa').disabled = !on; }
+
+/* Un tentativo al gioco della torre: esito deciso dal programma della sessione */
+async function playRound(forceLose) {
+  S.busy = true; enable(false); say('');
+  buildTower();
+  const blocks = [...$('tower').children];
+  for (let i = 0; i < blocks.length; i++) { await sleep(280); blocks[i].style.opacity = 1; tone(400 + i * 80, .1, 'triangle'); }
+  await sleep(300);
+  const p = S.livello === 4 ? Math.max(cfg().probPerdere, 0.85) : cfg().probPerdere;
+  const lose = forceLose !== undefined ? forceLose : Math.random() < p;
+  if (lose) {
+    blocks.forEach((b, i) => { b.style.transform = 'translate(' + (i * 30 - 40) + 'px,' + (40 - i * 10) + 'px) rotate(' + (i % 2 ? 70 : -60) + 'deg)'; });
+    tone(180, .35, 'sawtooth', .12);
+    S.rabbia = Math.min(4, S.rabbia + 1);
+  } else {
+    tone(660, .12); setTimeout(() => tone(880, .2), 120);
+    S.rabbia = Math.max(0, S.rabbia - 1);
+  }
+  setThermo();
+  await sleep(500);
+  return lose;
+}
+
+/* ---------- Livelli 2-4: il bambino decide ---------- */
+async function onGioca() {
+  if (S.busy) return;
+  const lose = await playRound();
+  if (S.rabbia >= 4) { await explode(); return; }
+  if (S.rabbia === SD_LEVEL && !S.trial) startTrial();
+  else if (S.trial && S.rabbia < SD_LEVEL) { /* vinto e sceso: l'occasione continua finché resta acceso */ }
+  const msgs = lose
+    ? (S.rabbia >= SD_LEVEL ? cfg().nome + ' è molto arrabbiato!' : (S.rabbia === 2 ? cfg().nome + ' comincia ad arrabbiarsi...' : 'Oh no, è caduta!'))
+    : 'Evviva, la torre sta su!';
+  say(msgs, S.rabbia >= SD_LEVEL ? false : true);
+  S.busy = false; enable(true);
+}
+
+function startTrial() {
+  S.trial = { t0: Date.now(), prompt: null };
+  if (S.livello === 2) giveprompt(S.aiuto);
+  if (S.livello >= 3) {
+    clearTimeout(S.delayTimer);
+    S.delayTimer = setTimeout(() => { if (S.trial && !S.busy) giveprompt('parziale'); }, cfg().secondiAiutoRitardato * 1000);
+  }
+}
+function giveprompt(kind) {
+  S.trial.prompt = S.trial.prompt === 'completo' ? 'completo' : kind;
+  setPrompt(kind);
+  if (kind === 'completo') speak(cfg().nome + ' è arrabbiato. Prendiamo una pausa?');
+}
+function record(tipo, extra = {}) {
+  const t = { ora: new Date().toISOString(), tipo, ...extra };
+  S.trials.push(t);
+  return t;
+}
+
+async function onPausa() {
+  if (S.busy) return;
+  clearTimeout(S.delayTimer); setPrompt(null);
+  if (S.rabbia <= 1) {
+    record('fuori_contesto', { rabbia: S.rabbia });
+    say(cfg().nome + ' è tranquillo, ora non serve una pausa. Continua a giocare!');
+    return;
+  }
+  if (S.trial) {
+    const lat = Date.now() - S.trial.t0;
+    record(S.trial.prompt ? 'con_aiuto' : 'indipendente', { latenzaMs: lat, aiuto: S.trial.prompt || 'nessuno', rabbia: S.rabbia });
+    S.trial = null;
+  } else {
+    record('anticipata', { rabbia: S.rabbia, aiuto: 'nessuno' });
+  }
+  await calmCorner();
+  await rewardSequence();
+}
+
+async function explode() {
+  S.busy = true; enable(false); clearTimeout(S.delayTimer); setPrompt(null);
+  if (S.trial) { record('problema', { latenzaMs: Date.now() - S.trial.t0, aiuto: S.trial.prompt || 'nessuno' }); S.trial = null; }
+  else record('problema', { aiuto: 'nessuno' });
+  $('pico').classList.add('shake');
+  say('GRRRR!', false);
+  tone(120, .5, 'square', .12); setTimeout(() => tone(90, .4, 'square', .12), 300);
+  await sleep(1800);
+  $('pico').classList.remove('shake');
+  say(cfg().nome + ' si è arrabbiato tantissimo. Niente stella questa volta. Riproviamo.');
+  await sleep(3500);
+  S.rabbia = 1; setThermo(); say('');
+  S.busy = false; enable(true);
+  checkEnd();
+}
+
+/* ---------- Angolo calmo e rinforzo ---------- */
+async function calmCorner(auto = false) {
+  show('calm');
+  drawPico('picoCalm', 'calmo', S.energia);
+  const n = S.livello === 4 ? Math.max(1, cfg().respiri - 1) : cfg().respiri;
+  const b = $('breath'), tx = $('breathText');
+  speak('Respira con ' + cfg().nome + '.');
+  await sleep(1500);
+  for (let i = 0; i < n; i++) {
+    tx.textContent = 'Inspira...'; b.style.transform = 'scale(1.6)'; tone(330, 1.2, 'sine', .05);
+    await sleep(3000);
+    tx.textContent = 'Espira...'; b.style.transform = 'scale(1)';
+    await sleep(3000);
+    S.rabbia = Math.max(0, S.rabbia - Math.ceil(S.rabbia / (n - i)));
+  }
+  S.rabbia = 0; tx.textContent = '';
+}
+async function rewardSequence() {
+  S.energia++; S.stelle++;
+  show('reward');
+  drawPico('picoReward', 'felice', S.energia - 1);
+  $('rewardTitle').textContent = cfg().nome + ' si sente meglio!';
+  $('rewardLead').textContent = 'Ha fatto la pausa ed è diventato più forte. Ora può scegliere un gioco!';
+  speak(cfg().nome + ' si sente meglio ed è diventato più forte! Scegli un gioco.');
+  await sleep(700);
+  drawPico('picoReward', 'felice', S.energia);
+  [523, 659, 784].forEach((f, i) => setTimeout(() => tone(f, .2, 'triangle'), i * 150));
+}
+document.querySelectorAll('.choice').forEach(c => c.addEventListener('click', () => bonusGame(c.dataset.game)));
+
+/* ---------- Giochi bonus (rinforzo per accesso, principio di Premack) ---------- */
+let playTimer = null;
+function bonusGame(kind) {
+  if (S.trials.length) S.trials[S.trials.length - 1].bonus = kind;
+  show('play');
+  const area = $('play'); area.querySelectorAll('.bub,.spark').forEach(e => e.remove());
+  let left = cfg().secondiBonus;
+  $('playTimer').textContent = left + ' s';
+  let spawner = null;
+  if (kind === 'bolle') {
+    const spawn = () => {
+      const b = document.createElement('div'); b.className = 'bub';
+      const s = 50 + Math.random() * 70; b.style.width = b.style.height = s + 'px';
+      b.style.left = Math.random() * (innerWidth - s) + 'px'; b.style.top = innerHeight + 'px';
+      area.appendChild(b);
+      const dur = 4000 + Math.random() * 3000, t0 = performance.now();
+      const step = now => { const k = (now - t0) / dur; if (!b.isConnected) return; b.style.top = (innerHeight - k * (innerHeight + s)) + 'px'; if (k < 1) requestAnimationFrame(step); else b.remove(); };
+      requestAnimationFrame(step);
+      b.addEventListener('pointerdown', e => { burst(e.clientX, e.clientY, '#7cc6ff'); tone(500 + Math.random() * 500, .12, 'triangle'); b.remove(); });
+    };
+    spawner = setInterval(spawn, 450);
+  } else {
+    area.onpointerdown = e => { const cols = ['#ff5d5d', '#ffd23f', '#5dff9a', '#5db8ff', '#c05dff']; burst(e.clientX, e.clientY, cols[Math.floor(Math.random() * cols.length)], 26); tone(300 + Math.random() * 600, .25, 'sine', .1); };
+  }
+  clearInterval(playTimer);
+  playTimer = setInterval(() => {
+    left--; $('playTimer').textContent = left + ' s';
+    if (left <= 0) { clearInterval(playTimer); clearInterval(spawner); area.onpointerdown = null; afterBonus(); }
+  }, 1000);
+}
+function burst(x, y, color, n = 14) {
+  for (let i = 0; i < n; i++) {
+    const s = document.createElement('div'); s.className = 'spark'; s.style.background = color;
+    s.style.left = x + 'px'; s.style.top = y + 'px'; $('play').appendChild(s);
+    const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 90;
+    s.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d}px)`, opacity: 0 }], { duration: 700, easing: 'ease-out' });
+    setTimeout(() => s.remove(), 700);
+  }
+}
+function afterBonus() {
+  if (S.livello === 1) { modelingStep(); return; }
+  show('game'); setThermo(); updateTop(); say(''); S.busy = false; enable(true);
+  checkEnd();
+}
+function occasioni() { return S.trials.filter(t => t.tipo !== 'fuori_contesto').length; }
+function checkEnd() { if (S.livello > 1 && occasioni() >= cfg().prove) endSession(); }
+
+/* ---------- Livello 1: modeling ---------- */
+let modelRuns = 0;
+async function modelingStep() {
+  show('game'); updateTop(); setThermo();
+  $('controls').style.display = 'none';
+  modelRuns++;
+  if (modelRuns > 2) { endSession(); return; }
+  S.rabbia = 0; setThermo();
+  const N = cfg().nome;
+  say('Guarda ' + N + '. Sta giocando alla torre.'); await waitNext();
+  for (let i = 0; i < 3; i++) { await playRound(true); say(['Oh no, è caduta!', N + ' comincia ad arrabbiarsi...', N + ' sente la rabbia nella pancia. Stringe i pugni.'][i]); await waitNext(); }
+  say('Il termometro è arancione. ' + N + ' pensa: "Mi prendo una pausa!"');
+  setPrompt('parziale'); await waitNext(); setPrompt(null);
+  record('modello_osservato');
+  await calmCorner(true);
+  await rewardSequence();
+}
+function waitNext() {
+  return new Promise(res => { const b = $('btnNext'); b.style.display = 'block'; b.onclick = () => { b.style.display = 'none'; tone(500, .08); res(); }; });
+}
+
+/* ---------- Inizio e fine sessione ---------- */
+function startSession() {
+  newSession(); modelRuns = 0;
+  show('game'); updateTop(); setThermo(); buildTower(); say('');
+  if (S.livello === 1) { modelingStep(); return; }
+  $('controls').style.display = 'flex';
+  say('Gioca alla torre con ' + cfg().nome + '. Se la rabbia sale, puoi fare una pausa.');
+  S.busy = false; enable(true);
+}
+function endSession() {
+  clearTimeout(S.delayTimer);
+  db.sessions.push({ id: S.id, inizio: S.start, fine: new Date().toISOString(), livello: S.livello, aiuto: S.livello === 2 ? S.aiuto : '', prove: S.trials });
+  save();
+  $('controls').style.display = 'flex';
+  show('end'); drawPico('picoEnd', 'felice', S.energia);
+  $('endLead').textContent = S.livello === 1
+    ? 'Hai visto come fa ' + cfg().nome + ' a calmarsi. La prossima volta lo aiuti tu!'
+    : 'Hai guadagnato ' + S.stelle + ' stelle. ' + cfg().nome + ' è diventato fortissimo!';
+  speak('Bravissimo!');
+}
+
+$('btnGioca').onclick = onGioca;
+$('btnPausa').onclick = onPausa;
+$('startBtn').onclick = () => { tone(600, .1); startSession(); };
+$('endBtn').onclick = () => goHome();
+function goHome() {
+  show('home'); drawPico('picoHome', 'felice', 0);
+  $('homeTitle').textContent = cfg().nome + ' e la pausa';
+  $('homeLead').textContent = 'Aiuta ' + cfg().nome + ' a stare bene quando arriva la rabbia.';
+}
+
+/* ---------- Area terapista ---------- */
+$('gearBtn').onclick = () => { $('pinInput').value = ''; $('pinMsg').textContent = cfg().pin === '1234' ? 'PIN iniziale: 1234 (cambialo nelle impostazioni)' : ''; $('pinModal').classList.add('active'); $('pinInput').focus(); };
+$('pinCancel').onclick = () => $('pinModal').classList.remove('active');
+$('pinOk').onclick = () => {
+  if ($('pinInput').value === cfg().pin) { $('pinModal').classList.remove('active'); openTherapist(); }
+  else $('pinMsg').textContent = 'PIN errato';
+};
+$('closeTher').onclick = goHome;
+
+const FIELDS = [
+  ['nome', 'Nome del personaggio', 'text'],
+  ['livello', 'Livello', 'select', [[1, '1 · Guardo Pico (modeling)'], [2, '2 · Aiuto Pico (con aiuto)'], [3, '3 · Decido io (senza aiuto)'], [4, '4 · Sono forte (tolleranza)']]],
+  ['aiuto', 'Tipo di aiuto al livello 2', 'select', [['completo', 'Completo: lampeggio, mano e voce'], ['parziale', 'Parziale: solo lampeggio']]],
+  ['prove', 'Occasioni per sessione', 'number'],
+  ['probPerdere', 'Probabilità di perdere (0–1)', 'number'],
+  ['respiri', 'Respiri nella pausa', 'number'],
+  ['secondiBonus', 'Secondi di gioco bonus', 'number'],
+  ['secondiAiutoRitardato', 'Secondi prima dell\'aiuto ritardato (liv. 3–4)', 'number'],
+  ['criterio', 'Criterio di padronanza (%)', 'number'],
+  ['sessioniCriterio', 'Sessioni consecutive per il criterio', 'number'],
+  ['voce', 'Voce narrante', 'select', [['true', 'Sì'], ['false', 'No']]],
+  ['pin', 'PIN terapista', 'text']
+];
+function openTherapist() {
+  show('therapist');
+  $('form').innerHTML = FIELDS.map(([k, label, type, opts]) => {
+    const v = cfg()[k];
+    const input = type === 'select'
+      ? '<select data-k="' + k + '">' + opts.map(([ov, ol]) => '<option value="' + ov + '"' + (String(ov) === String(v) ? ' selected' : '') + '>' + ol + '</option>').join('') + '</select>'
+      : '<input data-k="' + k + '" type="' + type + '" value="' + v + '"' + (type === 'number' ? ' step="any"' : '') + '>';
+    return '<label>' + label + input + '</label>';
+  }).join('');
+  renderData();
+}
+$('saveCfg').onclick = () => {
+  document.querySelectorAll('#form [data-k]').forEach(el => {
+    const k = el.dataset.k; let v = el.value;
+    if (k === 'voce') v = v === 'true';
+    else if (typeof DEFAULT_CFG[k] === 'number') v = Number(v);
+    db.cfg[k] = v;
+  });
+  save(); $('savedNote').textContent = 'Salvato.'; setTimeout(() => $('savedNote').textContent = '', 2000);
+};
+function summary(s) {
+  const occ = s.prove.filter(t => ['indipendente', 'con_aiuto', 'problema', 'anticipata'].includes(t.tipo));
+  const ind = s.prove.filter(t => t.tipo === 'indipendente' || t.tipo === 'anticipata').length;
+  const aid = s.prove.filter(t => t.tipo === 'con_aiuto').length;
+  const prob = s.prove.filter(t => t.tipo === 'problema').length;
+  const fuori = s.prove.filter(t => t.tipo === 'fuori_contesto').length;
+  const lats = s.prove.filter(t => t.latenzaMs != null && t.tipo !== 'problema').map(t => t.latenzaMs);
+  const lat = lats.length ? (lats.reduce((a, b) => a + b, 0) / lats.length / 1000).toFixed(1) : '';
+  const pct = occ.length ? Math.round(ind / occ.length * 100) : null;
+  return { occ: occ.length, ind, aid, prob, fuori, lat, pct };
+}
+function renderData() {
+  const ss = db.sessions;
+  const rows = ss.slice().reverse().map(s => {
+    const m = summary(s), d = new Date(s.inizio);
+    return '<tr><td>' + d.toLocaleDateString('it-IT') + ' ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + '</td><td>' + s.livello + (s.aiuto ? ' (' + s.aiuto + ')' : '') + '</td><td>' + m.occ + '</td><td>' + m.ind + '</td><td>' + m.aid + '</td><td>' + m.prob + '</td><td>' + m.fuori + '</td><td>' + (m.pct == null ? '–' : m.pct + '%') + '</td><td>' + (m.lat ? m.lat + ' s' : '–') + '</td></tr>';
+  }).join('');
+  $('sessTable').innerHTML = ss.length
+    ? '<table><tr><th>Data</th><th>Livello</th><th>Occasioni</th><th>Pause indipendenti</th><th>Pause con aiuto</th><th>Esplosioni</th><th>Pause con termometro verde</th><th>% indipendenti</th><th>Latenza media</th></tr>' + rows + '</table>'
+    : '<p class="note">Nessuna sessione registrata.</p>';
+  // consiglio di padronanza
+  const c = cfg(), last = ss.filter(s => s.livello === Number(c.livello) && s.livello > 1).slice(-c.sessioniCriterio);
+  let adv = '';
+  if (Number(c.livello) === 1) adv = 'Livello 1: dopo 1–2 visioni del modello, passa al livello 2 con aiuto completo.';
+  else if (last.length >= c.sessioniCriterio && last.every(s => (summary(s).pct || 0) >= c.criterio)) {
+    adv = 'Criterio raggiunto al livello ' + c.livello + (Number(c.livello) === 2 && c.aiuto === 'completo' ? ': passa all\'aiuto parziale.' : (Number(c.livello) < 4 ? ': puoi passare al livello ' + (Number(c.livello) + 1) + '.' : ': programma la generalizzazione nel gioco reale.'));
+  } else adv = 'Criterio non ancora raggiunto al livello attuale (' + c.criterio + '% per ' + c.sessioniCriterio + ' sessioni consecutive).';
+  $('advice').innerHTML = '<div class="advice">' + adv + '</div>';
+  drawChart(ss.filter(s => s.livello > 1));
+}
+function drawChart(ss) {
+  const W = 760, H = 220, L = 44, R = 16, T = 14, B = 30, svg = $('chart');
+  const x = i => L + (ss.length <= 1 ? (W - L - R) / 2 : i * (W - L - R) / (ss.length - 1));
+  const y = v => T + (1 - v / 100) * (H - T - B);
+  let g = '';
+  [0, 50, 100].forEach(v => { g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#e3e9f0"/><text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" font-size="12" text-anchor="end" fill="#5b6b82">' + v + '%</text>'; });
+  g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(cfg().criterio) + '" y2="' + y(cfg().criterio) + '" stroke="#4caf6e" stroke-dasharray="6 5"/>';
+  const pts = ss.map((s, i) => ({ i, v: summary(s).pct, lv: s.livello })).filter(p => p.v != null);
+  for (let k = 1; k < pts.length; k++) if (pts[k].lv === pts[k - 1].lv) g += '<line x1="' + x(pts[k - 1].i) + '" y1="' + y(pts[k - 1].v) + '" x2="' + x(pts[k].i) + '" y2="' + y(pts[k].v) + '" stroke="#3b82c4" stroke-width="2"/>';
+  for (let k = 1; k < ss.length; k++) if (ss[k].livello !== ss[k - 1].livello) { const xm = (x(k) + x(k - 1)) / 2; g += '<line x1="' + xm + '" x2="' + xm + '" y1="' + T + '" y2="' + (H - B) + '" stroke="#8a97a8"/><text x="' + (xm + 4) + '" y="' + (T + 10) + '" font-size="12" fill="#5b6b82">liv. ' + ss[k].livello + '</text>'; }
+  pts.forEach(p => { g += '<circle cx="' + x(p.i) + '" cy="' + y(p.v) + '" r="5" fill="#3b82c4"/>'; });
+  ss.forEach((s, i) => { g += '<text x="' + x(i) + '" y="' + (H - 10) + '" font-size="12" text-anchor="middle" fill="#5b6b82">' + (i + 1) + '</text>'; });
+  if (!ss.length) g += '<text x="' + W / 2 + '" y="' + H / 2 + '" text-anchor="middle" fill="#5b6b82" font-size="14">Ancora nessun dato dei livelli 2–4</text>';
+  svg.innerHTML = g;
+}
+$('exportCsv').onclick = () => {
+  const lines = [['sessione', 'inizio', 'livello', 'aiuto_livello2', 'ora_prova', 'tipo', 'aiuto_dato', 'latenza_s', 'rabbia', 'bonus'].join(';')];
+  db.sessions.forEach(s => s.prove.forEach(t => lines.push([s.id, s.inizio, s.livello, s.aiuto, t.ora, t.tipo, t.aiuto || '', t.latenzaMs != null ? (t.latenzaMs / 1000).toFixed(1) : '', t.rabbia ?? '', t.bonus || ''].join(';'))));
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pausa-dati.csv'; a.click();
+};
+$('clearData').onclick = () => { $('confirmText').textContent = 'Cancellare tutte le sessioni registrate?'; $('confirmModal').classList.add('active'); };
+$('confirmNo').onclick = () => $('confirmModal').classList.remove('active');
+$('confirmYes').onclick = () => { db.sessions = []; save(); $('confirmModal').classList.remove('active'); renderData(); };
+
+goHome();
+</script>
+</body>
+</html>
