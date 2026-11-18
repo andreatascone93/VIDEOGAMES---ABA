@@ -6,11 +6,12 @@ Piccoli videogiochi da usare dentro un intervento di analisi del comportamento a
 
 | Gioco | Comportamento target | Stato |
 | --- | --- | --- |
-| [Il gioco della pausa](giochi/pausa/index.html) | Prendersi una pausa quando sale la rabbia (autoregolazione) | Prototipo |
+| [La cameretta di Francesco](giochi/cameretta/index.html) | Scegliere la pausa quando sale la rabbia durante il gioco al tablet (autoregolazione) | Prototipo 3D |
+| [Il gioco della pausa](giochi/pausa/index.html) | Prima bozza 2D | Archiviata (troppo infantile per l'età target) |
 
 ## Come provarlo
 
-Apri `giochi/pausa/index.html` in un browser (meglio su tablet, in orizzontale). Funziona senza connessione e salva i dati solo sul dispositivo.
+Apri `giochi/cameretta/index.html` in un browser (meglio su tablet, in orizzontale). Il gioco usa Three.js (incluso nella cartella, licenza MIT), funziona senza connessione e salva i dati solo sul dispositivo.
 
 L'area terapista si apre con l'ingranaggio in alto a destra. Il PIN iniziale è `1234`: cambialo subito.
 

@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>La cameretta di Francesco</title>
+<style>
+  :root { --ink: #23324a; --quiet: #5b6b82; --verde: #4caf6e; --giallo: #f2c230; --arancione: #f28c28; --rosso: #e04848; --blu: #3b82c4; --viola: #8a63d2; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #cfe3f2; color: var(--ink);
+    font-family: "Nunito", "Segoe UI", system-ui, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+  canvas#world { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  button { font-family: inherit; cursor: pointer; border: none; }
+  .hud { position: fixed; z-index: 5; pointer-events: none; }
+  #anger { top: 14px; left: 16px; background: rgba(255,255,255,.92); border-radius: 16px; padding: 8px 14px; box-shadow: 0 3px 0 rgba(0,0,0,.12); display: none; }
+  #anger .lab { font-weight: 800; font-size: 16px; margin-bottom: 4px; }
+  #anger .bar { width: 220px; height: 22px; border-radius: 11px; background: #e6edf3; overflow: hidden; }
+  #anger .fill { height: 100%; width: 10%; transition: width .6s, background .6s; }
+  #stats { top: 14px; right: 64px; background: rgba(255,255,255,.92); border-radius: 16px; padding: 8px 14px; font-weight: 800; font-size: 20px; box-shadow: 0 3px 0 rgba(0,0,0,.12); display: none; }
+  #objective { top: 14px; left: 50%; transform: translateX(-50%); background: #23324a; color: #fff; border-radius: 14px; padding: 8px 18px; font-weight: 800; font-size: clamp(15px, 2vw, 20px); display: none; max-width: 46vw; text-align: center; }
+  #caption { bottom: 18px; left: 50%; transform: translateX(-50%); width: min(860px, 92vw); background: rgba(255,255,255,.96); border-radius: 20px; padding: 14px 22px;
+    font-size: clamp(19px, 2.6vw, 26px); font-weight: 700; text-align: center; box-shadow: 0 4px 0 rgba(0,0,0,.15); display: none; line-height: 1.35; }
+  #signals { top: 90px; left: 16px; background: #fff1e6; border: 3px solid var(--arancione); border-radius: 14px; padding: 8px 12px; font-size: clamp(15px, 1.9vw, 19px); font-weight: 700; display: none; line-height: 1.4; }
+  #signals b { display: block; color: #b4561a; }
+  #tabletPanel { right: 16px; top: 80px; width: 260px; background: #1e2a44; color: #fff; border-radius: 18px; padding: 12px 14px; border: 6px solid #3a3f4b; display: none; }
+  #tabletPanel .t { font-size: 13px; opacity: .7; margin-bottom: 6px; }
+  #tabletPanel .lane { font-size: 14px; font-weight: 700; margin: 6px 0 2px; }
+  #tabletPanel .track { height: 16px; background: #34405e; border-radius: 8px; overflow: hidden; }
+  #tabletPanel .car { height: 100%; width: 0%; border-radius: 8px; }
+  #tabletPanel .res { font-size: 22px; font-weight: 900; text-align: center; margin-top: 8px; min-height: 30px; }
+  .lbl { position: fixed; z-index: 4; transform: translate(-50%, -100%); background: #fff; border-radius: 14px; padding: 6px 12px; font-weight: 800; font-size: clamp(14px, 1.8vw, 18px);
+    box-shadow: 0 3px 0 rgba(0,0,0,.18); white-space: nowrap; pointer-events: auto; display: none; border: 3px solid #fff; }
+  .lbl.hot { border-color: var(--verde); animation: pulse 0.9s ease-in-out infinite; }
+  @keyframes pulse { 50% { transform: translate(-50%, -100%) scale(1.12); } }
+  #headIcon { position: fixed; z-index: 4; transform: translate(-50%, -100%); font-size: 34px; pointer-events: none; }
+  #flash { position: fixed; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(circle, transparent 40%, rgba(224,72,72,.55)); opacity: 0; transition: opacity .3s; }
+  .overlay { position: fixed; inset: 0; z-index: 10; display: none; flex-direction: column; align-items: center; justify-content: center; background: rgba(234,244,251,.94); padding: 20px; text-align: center; }
+  .overlay.active { display: flex; }
+  h1 { font-size: clamp(28px, 5vw, 48px); margin: 8px 0; }
+  .lead { font-size: clamp(18px, 2.5vw, 24px); color: var(--quiet); max-width: 760px; margin: 4px 0 18px; }
+  .big { font-size: clamp(22px, 3.2vw, 32px); font-weight: 800; padding: 16px 38px; border-radius: 999px; color: #fff; background: var(--blu); box-shadow: 0 6px 0 rgba(0,0,0,.18); }
+  .big:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.18); }
+  #gear { position: fixed; top: 12px; right: 14px; z-index: 11; background: rgba(255,255,255,.7); border-radius: 50%; width: 42px; height: 42px; font-size: 22px; }
+  #breathOv { background: rgba(229,245,234,.55); }
+  .breath { width: 170px; height: 170px; border-radius: 50%; background: radial-gradient(circle, #9ad7b0, #4caf6e); transition: transform 3s ease-in-out; opacity: .9; }
+  .breath-text { font-size: clamp(28px, 4vw, 42px); font-weight: 900; color: #2f7a4b; margin-top: 24px; min-height: 1.3em; text-shadow: 0 2px 0 #fff; }
+
+  /* minigiochi */
+  #play { background: #1e2a44; overflow: hidden; }
+  #play .timer { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 24px; font-weight: 800; z-index: 5; }
+  #play .score { position: absolute; top: 14px; right: 20px; color: #fff; font-size: 26px; font-weight: 800; z-index: 5; }
+  #play .hint { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 20px; font-weight: 800; background: rgba(0,0,0,.35); padding: 6px 16px; border-radius: 12px; z-index: 5; }
+  .bonus-el { position: absolute; pointer-events: none; }
+  .road { position: absolute; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: min(60vw, 480px); background: #5d6577; border-left: 8px solid #f2f2f2; border-right: 8px solid #f2f2f2; }
+  .lane-line { position: absolute; top: -120px; bottom: 0; width: 6px; background: repeating-linear-gradient(#fff 0 50px, transparent 50px 110px); animation: roll 1.6s linear infinite; }
+  @keyframes roll { from { transform: translateY(0); } to { transform: translateY(110px); } }
+  .rcar { font-size: 80px; transition: left .35s ease-out; bottom: 30px; transform: translateX(-50%) rotate(90deg); }
+  .target { position: absolute; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, #fff 0 18%, #e04848 19% 38%, #fff 39% 58%, #e04848 59% 100%); box-shadow: 0 6px 0 rgba(0,0,0,.25); animation: popin .3s ease-out; }
+  @keyframes popin { from { transform: scale(.2); } to { transform: scale(1); } }
+  .pow { position: absolute; font-size: 44px; font-weight: 900; color: #ffd23f; text-shadow: 0 3px 0 #b4561a; pointer-events: none; }
+  .spark { position: absolute; width: 10px; height: 10px; border-radius: 50%; pointer-events: none; }
+
+  /* area terapista */
+  #therapist { justify-content: flex-start; overflow-y: auto; background: #f7f9fc; align-items: stretch; text-align: left; padding: 20px 28px; }
+  #therapist > * { flex-shrink: 0; }
+  #therapist h2 { margin: 18px 0 8px; font-size: 22px; }
+  .form { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px 24px; }
+  .form label { display: flex; flex-direction: column; font-size: 15px; color: var(--quiet); gap: 4px; }
+  .form input, .form select { font-size: 18px; padding: 8px; border-radius: 8px; border: 1px solid #c9d6e3; font-family: inherit; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; background: #fff; }
+  th, td { border-bottom: 1px solid #e3e9f0; padding: 8px; text-align: left; }
+  th { background: #eef3f8; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; align-items: center; }
+  .small { font-size: 16px; padding: 10px 18px; border-radius: 10px; background: var(--blu); color: #fff; font-weight: 700; }
+  .small.grey { background: #8a97a8; } .small.red { background: var(--rosso); }
+  .note { font-size: 14px; color: var(--quiet); }
+  .advice { background: #fff8d9; border: 1px solid #f0dc8c; padding: 10px 14px; border-radius: 10px; font-size: 16px; }
+  #chart { background: #fff; border: 1px solid #e3e9f0; border-radius: 8px; width: 100%; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: none; align-items: center; justify-content: center; z-index: 50; }
+  .modal.active { display: flex; }
+  .modal .box { background: #fff; padding: 24px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 280px; }
+  .modal input { font-size: 28px; text-align: center; padding: 8px; letter-spacing: 8px; }
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+
+<div class="hud" id="anger"><div class="lab">Rabbia</div><div class="bar"><div class="fill" id="angerFill"></div></div></div>
+<div class="hud" id="stats"></div>
+<div class="hud" id="objective"></div>
+<div class="hud" id="signals"></div>
+<div class="hud" id="caption"></div>
+<div class="hud" id="tabletPanel">
+  <div class="t">Sul tablet di <span class="kname">Francesco</span>: Super Kart</div>
+  <div class="lane kname">Francesco</div><div class="track"><div class="car" id="carMe" style="background:#4caf6e"></div></div>
+  <div class="lane">Avversario</div><div class="track"><div class="car" id="carOpp" style="background:#e04848"></div></div>
+  <div class="res" id="raceRes"></div>
+</div>
+<div id="headIcon"></div>
+<div id="flash"></div>
+<div id="labels"></div>
+
+<button id="gear" aria-label="Area terapista">⚙️</button>
+
+<section class="overlay active" id="home">
+  <h1 id="homeTitle">La cameretta di Francesco</h1>
+  <p class="lead" id="homeLead">Una storia da giocare. Quando arriva la rabbia, decidi tu che cosa fa Francesco.</p>
+  <button class="big" id="startBtn">Iniziamo!</button>
+</section>
+
+<section class="overlay" id="breathOv">
+  <div class="breath" id="breath"></div>
+  <div class="breath-text" id="breathText"></div>
+</section>
+
+<section class="overlay" id="play">
+  <div class="timer" id="playTimer"></div>
+  <div class="score" id="playScore"></div>
+  <div class="hint" id="playHint"></div>
+</section>
+
+<section class="overlay" id="end">
+  <h1>Missione completata</h1>
+  <p class="lead" id="endLead"></p>
+  <button class="big" id="endBtn">Fine</button>
+</section>
+
+<section class="overlay" id="therapist">
+  <div class="row" style="justify-content:space-between">
+    <h1 style="font-size:28px">Area terapista</h1>
+    <button class="small grey" id="closeTher">Chiudi</button>
+  </div>
+  <h2>Impostazioni della prossima sessione</h2>
+  <div class="form" id="form"></div>
+  <div class="row"><button class="small" id="saveCfg">Salva impostazioni</button><span class="note" id="savedNote"></span></div>
+  <h2>Andamento</h2>
+  <div id="advice"></div>
+  <svg id="chart" viewBox="0 0 760 220"></svg>
+  <p class="note">Percentuale di scelte "pausa" indipendenti sulle occasioni per sessione (livelli 2–4). Linea tratteggiata: criterio di padronanza.</p>
+  <h2>Sessioni</h2>
+  <div id="sessTable"></div>
+  <div class="row">
+    <button class="small" id="exportCsv">Esporta CSV</button>
+    <button class="small grey" id="copyCsv">Copia dati</button>
+    <button class="small red" id="clearData">Cancella tutti i dati</button>
+    <span class="note" id="copyNote"></span>
+  </div>
+  <p class="note">I dati restano solo su questo dispositivo. Non inserire il nome reale del bambino se diverso da quello del personaggio.</p>
+</section>
+
+<div class="modal" id="pinModal"><div class="box">
+  <strong>PIN terapista</strong>
+  <input id="pinInput" type="password" inputmode="numeric" maxlength="6">
+  <span class="note" id="pinMsg"></span>
+  <div class="row"><button class="small" id="pinOk">Entra</button><button class="small grey" id="pinCancel">Annulla</button></div>
+</div></div>
+<div class="modal" id="confirmModal"><div class="box">
+  <strong>Cancellare tutte le sessioni registrate?</strong>
+  <div class="row"><button class="small red" id="confirmYes">Sì</button><button class="small grey" id="confirmNo">No</button></div>
+</div></div>
+
+<script src="three.min.js"></script>
+<script>
+/* =====================================================================
+   CONTINGENZE (modello A-B-C, vedi docs/architettura.md)
+   ===================================================================== */
+const GAME = {
+  id: 'cameretta',
+  contingenze: {
+    MO: 'Sconfitte ripetute al gioco sul tablet dopo alcune vittorie',
+    SD: 'Barra della rabbia arancione, segnali del corpo scritti e visibili sul personaggio',
+    rispostaTarget: 'Il giocatore porta Francesco nell\'angolo calmo (pausa)',
+    rispostePropblema: ['Sbattere la porta', 'Continuare a giocare fino a lanciare il tablet'],
+    conseguenzaTarget: 'Respirazione e calma, Francesco più forte, una stella, sblocco e accesso a un gioco a scelta',
+    conseguenzaProblema: 'Estinzione: Francesco resta arrabbiato, il tempo di gioco finisce, nessuna stella né sblocco; si riprova',
+    pausaAnticipata: 'Pausa scelta già in zona gialla: rinforzata come indipendente'
+  },
+  livelli: {
+    1: 'Guardo Francesco (modeling)',
+    2: 'Aiuto Francesco (aiuto al momento della scelta)',
+    3: 'Decido io (nessun aiuto, aiuto ritardato)',
+    4: 'Sono forte (più sconfitte, pausa più breve)'
+  }
+};
+const DEFAULT_CFG = { nome: 'Francesco', livello: 2, aiuto: 'completo', prove: 3, vittorie: 2, respiri: 3, secondiBonus: 30,
+  secondiAiutoRitardato: 10, criterio: 80, sessioniCriterio: 3, voce: true, pin: '1234' };
+const STORE = 'giochiAba.cameretta.v1';
+let db = (() => { try { const d = JSON.parse(localStorage.getItem(STORE)); if (d && d.cfg) { d.cfg = { ...DEFAULT_CFG, ...d.cfg }; return d; } } catch (e) {} return { cfg: { ...DEFAULT_CFG }, sessions: [] }; })();
+function save() { try { localStorage.setItem(STORE, JSON.stringify(db)); } catch (e) {} }
+const cfg = () => db.cfg;
+const N = () => cfg().nome;
+
+/* ---------- utility ---------- */
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let audioCtx;
+function tone(freq, dur = .15, type = 'sine', vol = .12) {
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.type = type; o.frequency.value = freq; g.gain.value = vol;
+    o.connect(g); g.connect(audioCtx.destination); o.start(); g.gain.exponentialRampToValueAtTime(.0001, audioCtx.currentTime + dur); o.stop(audioCtx.currentTime + dur);
+  } catch (e) {}
+}
+function speak(t) { if (!cfg().voce || !('speechSynthesis' in window)) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'it-IT'; u.rate = .95; speechSynthesis.speak(u); } catch (e) {} }
+function caption(t, voice = true) { const c = $('caption'); c.textContent = t || ''; c.style.display = t ? 'block' : 'none'; if (t && voice) speak(t); }
+function objective(t) { const o = $('objective'); o.textContent = t ? '🎯 ' + t : ''; o.style.display = t ? 'block' : 'none'; }
+function overlay(id, on) { $(id).classList.toggle('active', on); }
+
+/* =====================================================================
+   SCENA 3D
+   ===================================================================== */
+const canvas = $('world');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0xcfe3f2);
+const camera = new THREE.PerspectiveCamera(42, 1, .1, 100);
+function resize() {
+  const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h;
+  const k = Math.max(1, 1.45 / camera.aspect);
+  camera.position.set(0, 7.6 * k, 10.6 * k); camera.lookAt(0, .2, .2); camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0xb9a88f, .9));
+const sun = new THREE.DirectionalLight(0xffffff, 1.1); sun.position.set(-4, 10, 6); sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7 }); scene.add(sun);
+
+const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: .85, ...o });
+function box(w, h, d, color, x, y, z, parent = scene) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), typeof color === 'number' ? mat(color) : color);
+  m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; parent.add(m); return m;
+}
+// stanza: x da -5 a 5, z da -4 a 4
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 8), mat(0xd9b48a)); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+for (let i = -4.5; i <= 4.5; i += 1) box(.02, .002, 8, 0xc9a277, i, .001, 0);
+box(10, 3, .2, 0xf4e9d8, 0, 1.5, -4.1); // parete di fondo
+box(.2, 3, 8, 0xeadfcb, -5.1, 1.5, 0);  // parete sinistra
+box(.2, 3, 8, 0xeadfcb, 5.1, 1.5, 0);   // parete destra
+// finestra
+box(2.2, 1.4, .05, 0xffffff, 0, 1.9, -3.98); box(2, 1.2, .06, mat(0x9fd3f5, { emissive: 0x6fb6e6, emissiveIntensity: .3 }), 0, 1.9, -3.97);
+box(.06, 1.2, .07, 0xffffff, 0, 1.9, -3.95);
+// letto
+const bed = new THREE.Group(); scene.add(bed);
+box(2.1, .45, 3.1, 0x8a5a3b, -3.85, .225, -2.35, bed); box(2, .2, 3, 0xffffff, -3.85, .55, -2.35, bed);
+box(2.02, .12, 2.1, 0x5b8fd6, -3.85, .68, -1.9, bed); box(1.2, .18, .6, 0xfafafa, -3.85, .74, -3.5, bed); box(2.1, 1.1, .12, 0x8a5a3b, -3.85, .55, -3.92, bed);
+// scrivania e sedia
+box(2, .08, 1, 0xc98b57, 2.9, .78, -3.45); [[-0.9, -0.4], [0.9, -0.4], [-0.9, 0.4], [0.9, 0.4]].forEach(([dx, dz]) => box(.08, .78, .08, 0x9c6a42, 2.9 + dx, .39, -3.45 + dz));
+box(.7, .08, .7, 0xe04848, 2.9, .48, -2.55); box(.7, .7, .08, 0xe04848, 2.9, .85, -2.22); box(.08, .48, .08, 0x555555, 2.9, .24, -2.55);
+// libreria
+const shelf = box(1.6, 2.2, .45, 0xb07a4f, -1.6, 1.1, -3.75);
+[0xe04848, 0x3b82c4, 0xf2c230, 0x4caf6e, 0x8a63d2].forEach((c, i) => box(.18, .45, .3, c, -2.2 + i * .25, 1.55, -3.62));
+box(.45, .45, .45, 0xf28c28, -1.3, .95, -3.6);
+// tappeto
+const rug = new THREE.Mesh(new THREE.CircleGeometry(1.4, 40), mat(0x9fc6e8)); rug.rotation.x = -Math.PI / 2; rug.position.set(.2, .01, -.4); rug.receiveShadow = true; scene.add(rug);
+// porta (cardine sul lato sinistro)
+const doorPivot = new THREE.Group(); doorPivot.position.set(5.0, 0, .9); scene.add(doorPivot);
+const door = box(.08, 2.3, 1.2, 0x9c6a42, 0, 1.15, .6, doorPivot); box(.1, .08, .2, 0xf2c230, -.06, 1.1, 1.05, doorPivot);
+// angolo calmo
+const calm = new THREE.Group(); calm.position.set(-3.6, 0, 2.5); scene.add(calm);
+const calmMat = new THREE.Mesh(new THREE.CircleGeometry(1.15, 40), mat(0xc8ebd2)); calmMat.rotation.x = -Math.PI / 2; calmMat.position.y = .012; calmMat.receiveShadow = true; calm.add(calmMat);
+const beanbag = new THREE.Mesh(new THREE.SphereGeometry(.6, 28, 18), mat(0x6cc08b)); beanbag.scale.set(1.1, .55, 1.1); beanbag.position.set(0, .3, 0); beanbag.castShadow = true; calm.add(beanbag);
+const pot = new THREE.Mesh(new THREE.CylinderGeometry(.22, .17, .35, 16), mat(0xd27b4b)); pot.position.set(-.9, .18, .8); calm.add(pot);
+const leaves = new THREE.Mesh(new THREE.SphereGeometry(.38, 16, 12), mat(0x3f9a5a)); leaves.position.set(-.9, .62, .8); leaves.castShadow = true; calm.add(leaves);
+const lampLight = new THREE.PointLight(0xffd9a0, .8, 4); lampLight.position.set(0, 1.4, 0); calm.add(lampLight);
+// giochi sbloccabili
+const unlocks = new THREE.Group(); scene.add(unlocks);
+const karate = new THREE.Group(); karate.position.set(3.3, 0, 1.3); unlocks.add(karate);
+box(1.6, .04, 1.6, 0xd64545, 0, .02, 0, karate); box(.14, 1.1, .14, 0x555555, .55, .55, -.55, karate);
+const bag = new THREE.Mesh(new THREE.CylinderGeometry(.22, .22, .8, 16), mat(0x2f3b52)); bag.position.set(.55, .9, -.25); bag.castShadow = true; karate.add(bag);
+const race = new THREE.Group(); race.position.set(1.1, 0, 2.9); unlocks.add(race);
+const track = new THREE.Mesh(new THREE.TorusGeometry(.75, .16, 8, 36), mat(0x4b5263)); track.rotation.x = -Math.PI / 2; track.scale.z = .3; track.position.y = .03; race.add(track);
+box(.3, .14, .18, 0xf2c230, .75, .1, 0, race); box(.3, .14, .18, 0x3b82c4, -.75, .1, 0, race);
+karate.visible = false; race.visible = false;
+// freccia di aiuto
+const arrow = new THREE.Mesh(new THREE.ConeGeometry(.25, .5, 16), mat(0x4caf6e, { emissive: 0x4caf6e, emissiveIntensity: .5 })); arrow.rotation.x = Math.PI; arrow.visible = false; scene.add(arrow);
+
+/* ---------- personaggio ---------- */
+const faceCanvas = document.createElement('canvas'); faceCanvas.width = 512; faceCanvas.height = 256;
+const faceTex = new THREE.CanvasTexture(faceCanvas); faceTex.colorSpace = THREE.SRGBColorSpace;
+const SKIN = { felice: '#f3c9a3', normale: '#f3c9a3', seccato: '#f1bf98', arrabbiato: '#efab88', furioso: '#ea8f72', calmo: '#f3c9a3' };
+function drawFace(mood) {
+  const g = faceCanvas.getContext('2d'), cx = 128, ink = '#23324a';
+  g.fillStyle = SKIN[mood]; g.fillRect(0, 0, 512, 256);
+  const cheek = { felice: '#ffb3a7', normale: '#ffc4b8', seccato: '#ff9f94', arrabbiato: '#ff7a6e', furioso: '#ff4d4d', calmo: '#ffc4b8' }[mood];
+  g.fillStyle = cheek; [-30, 30].forEach(dx => { g.beginPath(); g.ellipse(cx + dx, 140, 10, 6, 0, 0, Math.PI * 2); g.fill(); });
+  g.strokeStyle = ink; g.fillStyle = ink; g.lineCap = 'round'; g.lineWidth = 4;
+  if (mood === 'calmo') { [-18, 18].forEach(dx => { g.beginPath(); g.arc(cx + dx, 120, 7, .15 * Math.PI, .85 * Math.PI); g.stroke(); }); }
+  else [-18, 18].forEach(dx => { g.beginPath(); g.arc(cx + dx, 122, 6.5, 0, Math.PI * 2); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(cx + dx + 2, 119, 2.2, 0, Math.PI * 2); g.fill(); g.fillStyle = ink; });
+  const brow = { seccato: [4, 1], arrabbiato: [9, 3], furioso: [13, 5] }[mood];
+  if (brow) { g.lineWidth = 5; [-1, 1].forEach(s => { g.beginPath(); g.moveTo(cx + s * 30, 104 - brow[1]); g.lineTo(cx + s * 9, 104 + brow[0] - brow[1]); g.stroke(); }); }
+  g.lineWidth = 4; g.beginPath();
+  if (mood === 'felice') { g.moveTo(cx - 16, 146); g.quadraticCurveTo(cx, 164, cx + 16, 146); g.stroke(); }
+  else if (mood === 'normale' || mood === 'calmo') { g.moveTo(cx - 12, 150); g.quadraticCurveTo(cx, 157, cx + 12, 150); g.stroke(); }
+  else if (mood === 'seccato') { g.moveTo(cx - 12, 154); g.lineTo(cx + 12, 152); g.stroke(); }
+  else if (mood === 'arrabbiato') { g.moveTo(cx - 14, 158); g.quadraticCurveTo(cx, 146, cx + 14, 158); g.stroke(); }
+  else { g.moveTo(cx - 16, 160); g.quadraticCurveTo(cx, 138, cx + 16, 160); g.closePath(); g.fillStyle = '#7a2a2a'; g.fill(); g.stroke(); }
+  faceTex.needsUpdate = true;
+}
+const BASE = 1.25; const kid = new THREE.Group(); kid.scale.setScalar(BASE); scene.add(kid);
+const body = new THREE.Group(); kid.add(body);
+const skinM = new THREE.MeshStandardMaterial({ map: faceTex, roughness: .8 });
+const handM = mat(0xf3c9a3), shirtM = mat(0x3b82c4), pantsM = mat(0x2d3e63), shoeM = mat(0xffffff), hairM = mat(0x5a3b22);
+function limb(w, h, d, m, x, y) { const p = new THREE.Group(); p.position.set(x, y, 0); const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); mesh.position.y = -h / 2; mesh.castShadow = true; p.add(mesh); body.add(p); return p; }
+const legL = limb(.17, .55, .19, pantsM, -.11, .58), legR = limb(.17, .55, .19, pantsM, .11, .58);
+[legL, legR].forEach(l => { const s = new THREE.Mesh(new THREE.BoxGeometry(.19, .1, .28), shoeM); s.position.set(0, -.55, .05); s.castShadow = true; l.add(s); });
+const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.23, .3, 6, 16), shirtM); torso.position.y = .88; torso.scale.z = .75; torso.castShadow = true; body.add(torso);
+const armL = limb(.12, .45, .12, shirtM, -.32, 1.08), armR = limb(.12, .45, .12, shirtM, .32, 1.08);
+[armL, armR].forEach(a => { const h = new THREE.Mesh(new THREE.SphereGeometry(.08, 12, 10), handM); h.position.y = -.5; a.add(h); });
+const head = new THREE.Mesh(new THREE.SphereGeometry(.32, 32, 24), skinM); head.position.y = 1.45; head.castShadow = true; body.add(head);
+const hair = new THREE.Mesh(new THREE.SphereGeometry(.335, 32, 16, 0, Math.PI * 2, 0, Math.PI * .5), hairM); hair.position.y = 1.47; hair.rotation.x = -.35; body.add(hair);
+const cape = new THREE.Mesh(new THREE.PlaneGeometry(.55, .75), mat(0xe04848, { side: THREE.DoubleSide })); cape.position.set(0, .82, -.2); cape.rotation.x = .12; cape.visible = false; body.add(cape);
+const aura = new THREE.Mesh(new THREE.RingGeometry(.5, .75, 40), new THREE.MeshBasicMaterial({ color: 0xffd23f, transparent: true, opacity: 0 })); aura.rotation.x = -Math.PI / 2; aura.position.y = .03; kid.add(aura);
+const heldTablet = new THREE.Mesh(new THREE.BoxGeometry(.42, .03, .3), mat(0x222222)); heldTablet.position.set(0, .82, .38); heldTablet.rotation.x = -.9; heldTablet.visible = false; body.add(heldTablet);
+const tablet = new THREE.Group(); scene.add(tablet);
+box(.45, .03, .32, 0x222222, 0, 0, 0, tablet); box(.4, .032, .27, mat(0x4fa3e0, { emissive: 0x4fa3e0, emissiveIntensity: .6 }), 0, .002, 0, tablet);
+const TABLET_DESK = new THREE.Vector3(2.9, .835, -3.4), TABLET_BED = new THREE.Vector3(-3.3, .77, -1.4);
+tablet.position.copy(TABLET_DESK);
+
+const K = { target: null, speed: 2.4, onArrive: null, walking: false, sitting: false, mood: 'normale', energia: 0, t: 0, faceY: null };
+function setMood(m) { K.mood = m; drawFace(m); handM.color.set(SKIN[m]); const ic = { furioso: '💢', arrabbiato: '💢', calmo: '😌' }[m]; $('headIcon').textContent = ic || ''; }
+function placeKid(x, z, rot = 0) { kid.position.set(x, 0, z); kid.rotation.y = rot; }
+function walkTo(x, z) { return new Promise(res => { standUp(); K.target = new THREE.Vector3(x, 0, z); K.onArrive = res; K.walking = true; }); }
+function faceTo(angle) { kid.rotation.y = angle; }
+function sit(h = .2) { K.sitting = true; body.position.y = -.3 + h; legL.rotation.x = legR.rotation.x = -Math.PI / 2; armL.rotation.x = armR.rotation.x = 0; }
+function standUp() { if (!K.sitting) return; K.sitting = false; body.position.y = 0; legL.rotation.x = legR.rotation.x = 0; }
+function grow() {
+  K.energia++; const s = BASE * Math.min(1 + K.energia * .06, 1.3); kid.scale.set(s, s, s); cape.visible = K.energia >= 3;
+  tween(v => { aura.material.opacity = v; aura.scale.setScalar(1 + v); }, 0, .9, 600).then(() => tween(v => aura.material.opacity = v, .9, 0, 1200));
+}
+
+/* ---------- tween ---------- */
+const tweens = [];
+function tween(fn, a, b, ms) { return new Promise(res => tweens.push({ fn, a, b, ms, t0: performance.now(), res })); }
+function stepTweens(now) { for (let i = tweens.length - 1; i >= 0; i--) { const tw = tweens[i], k = Math.min(1, (now - tw.t0) / tw.ms), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; tw.fn(tw.a + (tw.b - tw.a) * e); if (k >= 1) { tweens.splice(i, 1); tw.res(); } } }
+
+/* ---------- oggetti interattivi ---------- */
+const INTER = {
+  tablet: { obj: tablet, h: .6, at: () => tablet.position.distanceTo(TABLET_DESK) < .1 ? [2.9, -2.6, Math.PI] : [-2.45, -1.4, 0] },
+  calm:   { obj: calm, h: 1.6, at: () => [-3.6, 2.5, 0] },
+  door:   { obj: doorPivot, h: 2.6, at: () => [4.2, 1.5, Math.PI / 2], off: [0, 0, .6] },
+  karate: { obj: karate, h: 1.6, at: () => [3.0, 1.6, 0] },
+  race:   { obj: race, h: 1.0, at: () => [1.1, 2.0, 0] }
+};
+let active = {}; // id -> { text, hot, onPick }
+const labelsEl = $('labels');
+Object.keys(INTER).forEach(id => { const d = document.createElement('div'); d.className = 'lbl'; d.id = 'lbl-' + id; d.addEventListener('pointerdown', e => { e.stopPropagation(); pick(id); }); labelsEl.appendChild(d); });
+function setActive(map) {
+  active = map;
+  Object.keys(INTER).forEach(id => { const el = $('lbl-' + id), a = active[id]; el.style.display = a ? 'block' : 'none'; if (a) { el.textContent = a.text; el.classList.toggle('hot', !!a.hot); } });
+  arrow.visible = Object.values(active).some(a => a.arrow);
+}
+function setHot(id, hot, withArrow) { if (!active[id]) return; active[id].hot = hot; active[id].arrow = withArrow; $('lbl-' + id).classList.toggle('hot', hot); arrow.visible = !!withArrow; }
+let busy = false;
+async function pick(id) {
+  if (busy || !active[id]) return;
+  const a = active[id]; busy = true; tone(520, .07);
+  const [x, z, rot] = INTER[id].at(); setActive({}); await walkTo(x, z); faceTo(rot);
+  await a.onPick(); busy = false;
+}
+
+/* ---------- input: tocca il pavimento per camminare ---------- */
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+const objMeshes = id => { const arr = []; INTER[id].obj.traverse(o => { if (o.isMesh) arr.push(o); }); return arr; };
+canvas.addEventListener('pointerdown', e => {
+  if (busy || !freeWalk) return;
+  ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); ray.setFromCamera(ptr, camera);
+  for (const id of Object.keys(active)) if (ray.intersectObjects(objMeshes(id)).length) { pick(id); return; }
+  const hit = ray.intersectObject(floor)[0];
+  if (hit) { let { x, z } = hit.point; x = Math.max(-4.5, Math.min(4.5, x)); z = Math.max(-3.4, Math.min(3.7, z));
+    if (x < -2.6 && z < -.7) z = -.7; if (x > 1.7 && z < -2.1) z = -2.1; walkTo(x, z); tone(380, .05, 'triangle', .05); }
+});
+let freeWalk = false;
+
+/* ---------- ciclo di animazione ---------- */
+const v3 = new THREE.Vector3(); let last = performance.now(); let shake = 0;
+function loop(now) {
+  const dt = Math.min(.05, (now - last) / 1000); last = now; K.t += dt; stepTweens(now);
+  if (K.walking && K.target) {
+    const d = v3.subVectors(K.target, kid.position); d.y = 0; const dist = d.length();
+    if (dist < .05) { K.walking = false; const cb = K.onArrive; K.onArrive = null; legL.rotation.x = legR.rotation.x = armL.rotation.x = armR.rotation.x = 0; if (cb) cb(); }
+    else { d.normalize(); kid.position.addScaledVector(d, Math.min(dist, K.speed * dt)); kid.rotation.y = Math.atan2(d.x, d.z);
+      const sw = Math.sin(K.t * 11) * .6; legL.rotation.x = sw; legR.rotation.x = -sw; armL.rotation.x = -sw * .8; armR.rotation.x = sw * .8; body.position.y = Math.abs(Math.sin(K.t * 11)) * .04; }
+  } else if (!K.sitting) { body.position.y = Math.sin(K.t * 2) * .01; }
+  if (K.mood === 'furioso') { body.rotation.z = Math.sin(K.t * 40) * .05; } else body.rotation.z = 0;
+  if (K.mood === 'arrabbiato' && !K.walking && !K.sitting) { armL.rotation.z = -.25; armR.rotation.z = .25; } else { armL.rotation.z = armR.rotation.z = 0; }
+  // freccia
+  if (arrow.visible) { const ids = Object.keys(active).filter(k => active[k].arrow); if (ids[0]) { const o = INTER[ids[0]].obj; arrow.position.set(o.position.x, INTER[ids[0]].h + .5 + Math.sin(K.t * 5) * .15, o.position.z); } }
+  // camera shake
+  const k = Math.max(1, 1.45 / camera.aspect); camera.position.set(shake ? (Math.random() - .5) * shake : 0, 7.6 * k, 10.6 * k); shake *= .9; if (shake < .01) shake = 0;
+  camera.lookAt(0, .2, .2);
+  renderer.render(scene, camera);
+  // etichette e icona sulla testa
+  for (const id of Object.keys(active)) { const I = INTER[id], p = I.obj.getWorldPosition(v3.set(0, 0, 0)); if (I.off) p.add(new THREE.Vector3(...I.off)); p.y = I.h; p.project(camera);
+    const el = $('lbl-' + id); el.style.left = ((p.x + 1) / 2 * innerWidth) + 'px'; el.style.top = ((1 - p.y) / 2 * innerHeight) + 'px'; }
+  const hp = head.getWorldPosition(v3.set(0, 0, 0)); hp.y += .5 * kid.scale.y; hp.project(camera);
+  $('headIcon').style.left = ((hp.x + 1) / 2 * innerWidth) + 'px'; $('headIcon').style.top = ((1 - hp.y) / 2 * innerHeight) + 'px';
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* =====================================================================
+   STORIA GUIDATA
+   ===================================================================== */
+const ZONES = [{ c: 'var(--verde)', m: 'felice' }, { c: 'var(--verde)', m: 'normale' }, { c: 'var(--giallo)', m: 'seccato' }, { c: 'var(--arancione)', m: 'arrabbiato' }, { c: 'var(--rosso)', m: 'furioso' }];
+const SIGNALS = { 2: ['Denti stretti', 'Sbuffa'], 3: ['Pugni stretti', 'Faccia rossa', 'Cuore che batte forte'], 4: ['Urla', 'Vuole sbattere tutto'] };
+let S = null;
+function setAnger(v) {
+  S.rabbia = Math.max(0, Math.min(4, v)); const z = ZONES[S.rabbia];
+  $('angerFill').style.width = (10 + S.rabbia * 22.5) + '%'; $('angerFill').style.background = z.c; setMood(z.m);
+  const sig = SIGNALS[S.rabbia], el = $('signals');
+  if (sig) { el.innerHTML = '<b>Segnali della rabbia di ' + N() + '</b>' + sig.map(x => '• ' + x).join('<br>'); el.style.display = 'block'; } else el.style.display = 'none';
+}
+function updateStats() { $('stats').textContent = 'XP ' + (S.stelle * 100) + '   💪 Forza ' + K.energia; }
+function record(tipo, extra = {}) { S.trials.push({ ora: new Date().toISOString(), tipo, ...extra }); }
+const occasioni = () => S.trials.filter(t => t.tipo !== 'modello_osservato').length;
+
+async function startSession() {
+  S = { id: Date.now(), start: new Date().toISOString(), livello: Number(cfg().livello), aiuto: cfg().aiuto, rabbia: 0, stelle: 0, trials: [], trial: null, cicli: 0, delay: null };
+  document.querySelectorAll('.kname').forEach(e => e.textContent = N());
+  K.energia = 0; kid.scale.setScalar(BASE); cape.visible = false; karate.visible = race.visible = false;
+  tablet.position.copy(TABLET_DESK); tablet.visible = true; heldTablet.visible = false; doorPivot.rotation.y = 0;
+  placeKid(4.2, 1.5, -Math.PI / 2); standUp(); setAnger(1);
+  overlay('home', false); $('anger').style.display = 'block'; $('stats').style.display = 'block'; updateStats();
+  caption(N() + ' è appena tornato da scuola. È nella sua cameretta.');
+  await sleep(2600);
+  caption('Tocca il pavimento per far camminare ' + N() + '. Poi porta ' + N() + ' al tablet sulla scrivania.');
+  objective('Prendi il tablet');
+  freeWalk = true;
+  setActive({ tablet: { text: '📱 Prendi il tablet', onPick: playTablet } });
+}
+
+/* Francesco gioca al tablet: prima vince, poi perde e la rabbia sale */
+async function playTablet() {
+  objective(''); freeWalk = false;
+  tablet.visible = false; heldTablet.visible = true; tone(660, .1);
+  if (kid.position.x > 0) { await walkTo(-2.45, -1.4); }
+  faceTo(0); sit(.25); armL.rotation.x = armR.rotation.x = -1.0;
+  setAnger(0); $('tabletPanel').style.display = 'block';
+  caption(N() + ' gioca a Super Kart. Si diverte un sacco.');
+  const vinte = S.livello === 4 ? 1 : Number(cfg().vittorie);
+  let round = 0;
+  while (true) {
+    const win = round < vinte; round++;
+    await raceAnim(win);
+    if (win) { setAnger(0); caption(['Primo posto! ' + N() + ' è carichissimo.', 'Ancora primo! Che gara!', 'Un\'altra vittoria!'][Math.min(round - 1, 2)]); }
+    else {
+      setAnger(S.rabbia + 1);
+      if (S.rabbia === 1) caption('Oh no, ha perso. ' + N() + ' ci riprova.');
+      if (S.rabbia === 2) { caption('Ha perso di nuovo... ' + N() + ' stringe i denti e sbuffa.'); offerEarlyPause(); }
+      if (S.rabbia >= 3) break;
+    }
+    const r = await Promise.race([sleep(2600), earlyPause.promise]);
+    if (r === 'pausa') return;
+  }
+  await choiceMoment();
+}
+const earlyPause = { promise: new Promise(() => {}), resolve: null };
+function offerEarlyPause() {
+  earlyPause.promise = new Promise(r => earlyPause.resolve = r);
+  setActive({ calm: { text: '🌿 Fai una pausa', onPick: async () => { record('anticipata', { rabbia: S.rabbia, aiuto: 'nessuno' }); await doPause(); } } });
+  // l'etichetta resta toccabile anche mentre Francesco è seduto
+  const lbl = $('lbl-calm'); lbl.onpointerdown = e => { e.stopPropagation(); if (S.rabbia >= 2 && active.calm) { earlyPause.resolve('pausa'); leaveTablet(); busy = false; pick('calm'); } };
+}
+function leaveTablet() { $('tabletPanel').style.display = 'none'; heldTablet.visible = false; tablet.visible = true; tablet.position.copy(TABLET_BED); standUp(); armL.rotation.x = armR.rotation.x = 0; }
+async function raceAnim(win) {
+  const me = $('carMe'), op = $('carOpp'), res = $('raceRes'); res.textContent = ''; me.style.width = op.style.width = '0%';
+  const tMe = win ? 1 : .82 + Math.random() * .1, tOp = win ? .8 + Math.random() * .12 : 1;
+  await tween(v => { me.style.width = (v * tMe * 100) + '%'; op.style.width = (v * tOp * 100) + '%'; }, 0, 1, 1700);
+  res.textContent = win ? '🏆 VINTO!' : '❌ PERSO'; res.style.color = win ? '#7ee2a0' : '#ff8a8a';
+  if (win) { tone(660, .12); setTimeout(() => tone(880, .2), 120); } else tone(180, .35, 'sawtooth', .1);
+}
+
+/* Il momento della scelta: decide il giocatore */
+async function choiceMoment() {
+  $('lbl-calm').onpointerdown = e => { e.stopPropagation(); pick('calm'); };
+  await sleep(600); leaveTablet();
+  caption(N() + ' è molto arrabbiato! Cosa fa adesso? Decidi tu: tocca un oggetto.');
+  objective('Cosa fa ' + N() + '?');
+  S.trial = { t0: Date.now(), prompt: null };
+  freeWalk = true;
+  setActive({
+    calm:   { text: '🌿 Fai una pausa', onPick: () => choose('pausa') },
+    door:   { text: '🚪 Sbatti la porta', onPick: () => choose('porta') },
+    tablet: { text: '📱 Continua a giocare', onPick: () => choose('tablet') }
+  });
+  if (S.livello === 1) { await modelChoice(); return; }
+  if (S.livello === 2) givePrompt(S.aiuto);
+  if (S.livello >= 3) { clearTimeout(S.delay); S.delay = setTimeout(() => { if (S.trial && !busy) givePrompt('parziale'); }, cfg().secondiAiutoRitardato * 1000); }
+}
+function givePrompt(kind) {
+  if (!S.trial) return; S.trial.prompt = S.trial.prompt === 'completo' ? 'completo' : kind;
+  setHot('calm', true, kind === 'completo');
+  if (kind === 'completo') speak(N() + ' può fare una pausa nell\'angolo calmo.');
+}
+async function modelChoice() {
+  freeWalk = false; busy = true; setActive({});
+  caption('Guarda cosa fa ' + N() + '. Sente la rabbia nel corpo e pensa: "Mi prendo una pausa!"');
+  await sleep(3500);
+  record('modello_osservato'); S.trial = null;
+  await walkTo(-3.6, 2.5); faceTo(0); busy = false;
+  await doPause(true);
+}
+async function choose(c) {
+  clearTimeout(S.delay); objective(''); freeWalk = false;
+  const lat = S.trial ? Date.now() - S.trial.t0 : null, aiuto = S.trial && S.trial.prompt || 'nessuno';
+  if (c === 'pausa') { record(aiuto === 'nessuno' ? 'indipendente' : 'con_aiuto', { scelta: 'pausa', latenzaMs: lat, aiuto, rabbia: S.rabbia }); S.trial = null; await doPause(); }
+  else { record('problema', { scelta: c, latenzaMs: lat, aiuto, rabbia: S.rabbia }); S.trial = null; await doProblem(c); }
+}
+
+/* Conseguenza della pausa: calma, forza, stella, sblocco di nuovi giochi */
+async function doPause(modeling = false) {
+  setActive({}); objective(''); freeWalk = false; $('tabletPanel').style.display = 'none';
+  faceTo(0); sit(.3); caption(N() + ' si siede nell\'angolo calmo e respira.');
+  await sleep(1200);
+  overlay('breathOv', true);
+  const n = S.livello === 4 ? Math.max(1, cfg().respiri - 1) : Number(cfg().respiri), b = $('breath'), tx = $('breathText');
+  for (let i = 0; i < n; i++) {
+    tx.textContent = 'Inspira...'; b.style.transform = 'scale(1.6)'; tone(330, 1.2, 'sine', .04); tween(v => body.scale.set(1 + v, 1 + v, 1 + v), 0, .04, 3000);
+    await sleep(3000);
+    tx.textContent = 'Espira...'; b.style.transform = 'scale(1)'; tween(v => body.scale.set(1 + v, 1 + v, 1 + v), .04, 0, 3000);
+    await sleep(3000);
+    setAnger(Math.max(0, S.rabbia - Math.ceil(S.rabbia / (n - i))));
+  }
+  overlay('breathOv', false); tx.textContent = '';
+  setAnger(0); setMood('calmo'); await sleep(800); standUp(); setMood('felice');
+  S.stelle++; grow(); caption('+100 XP · Forza +1', false); updateStats(); [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, .2, 'triangle'), i * 140));
+  const first = !karate.visible;
+  caption(N() + ' si sente meglio ed è diventato più forte! ' + (first ? 'Ha sbloccato due nuovi giochi nella cameretta: scegline uno!' : 'Ora può scegliere un gioco.'));
+  if (first) { karate.visible = race.visible = true; [karate, race].forEach(g => tween(v => g.scale.setScalar(v), .01, 1, 700)); }
+  await sleep(1200);
+  freeWalk = true;
+  setActive({
+    karate: { text: '🥋 Allenamento di karate', hot: true, onPick: () => bonus('karate') },
+    race:   { text: '🏎️ Pista delle macchinine', hot: true, onPick: () => bonus('corsa') }
+  });
+  objective('Scegli un gioco');
+}
+
+/* Conseguenza della scelta problema: estinzione (nessun rinforzo), poi si riprova */
+async function doProblem(c) {
+  setActive({}); busy = true;
+  setAnger(4);
+  if (c === 'porta') {
+    caption('');
+    await tween(v => doorPivot.rotation.y = v, 0, 1.2, 350); await tween(v => doorPivot.rotation.y = v, 1.2, 0, 160);
+    tone(90, .5, 'square', .15); shake = .5; $('flash').style.opacity = 1;
+    caption('BAM! ' + N() + ' ha sbattuto la porta e ha urlato.');
+  } else {
+    tablet.visible = false; heldTablet.visible = true; sit(.25); armL.rotation.x = armR.rotation.x = -1.0;
+    $('tabletPanel').style.display = 'block'; await raceAnim(false); await sleep(600);
+    standUp(); heldTablet.visible = false; tablet.visible = true; tablet.position.set(kid.position.x, 1, kid.position.z + .3);
+    tone(120, .5, 'square', .12); shake = .4; $('flash').style.opacity = 1;
+    await tween(v => { tablet.position.set(-2.45 - v * 1.6, 1 + Math.sin(v * Math.PI) * .8 - v * .2, -1.1 + v * .4); tablet.rotation.z = v * 6; }, 0, 1, 700);
+    $('tabletPanel').style.display = 'none';
+    caption('GRRR! ' + N() + ' ha lanciato il tablet. Il tablet si è spento.');
+  }
+  await sleep(3800); $('flash').style.opacity = 0;
+  caption(N() + ' è ancora arrabbiatissimo e non si sente meglio. Niente XP e niente giochi nuovi questa volta.');
+  await sleep(4200);
+  tablet.rotation.z = 0; tablet.position.copy(TABLET_BED); setAnger(1);
+  busy = false;
+  nextCycle('Riproviamo. ' + N() + ' si è calmato un pochino. Quando vuoi, torna al tablet sul letto.');
+}
+
+async function bonus(kind) {
+  objective(''); freeWalk = false;
+  const last = S.trials[S.trials.length - 1]; if (last) last.bonus = kind;
+  await playMinigame(kind);
+  nextCycle(N() + ' si è divertito! Quando vuoi, torna a giocare al tablet sul letto.');
+}
+function nextCycle(msg) {
+  S.cicli++;
+  if (S.livello === 1 ? S.cicli >= 1 : occasioni() >= Number(cfg().prove)) { endSession(); return; }
+  caption(msg); objective('Torna al tablet'); freeWalk = true;
+  setActive({ tablet: { text: '📱 Gioca al tablet', onPick: playTablet } });
+}
+function endSession() {
+  clearTimeout(S.delay); setActive({}); freeWalk = false;
+  db.sessions.push({ id: S.id, inizio: S.start, fine: new Date().toISOString(), livello: S.livello, aiuto: S.livello === 2 ? S.aiuto : '', prove: S.trials }); save();
+  caption(''); objective(''); $('signals').style.display = 'none';
+  $('endLead').textContent = S.livello === 1 ? 'Hai visto come fa ' + N() + ' a calmarsi. La prossima volta decidi tu!' : N() + ' ha guadagnato ' + (S.stelle * 100) + ' XP e ora ha forza ' + K.energia + '.';
+  overlay('end', true); speak('Missione completata.');
+}
+$('startBtn').onclick = () => { tone(600, .1); startSession(); };
+$('endBtn').onclick = () => { overlay('end', false); goHome(); };
+function goHome() {
+  ['anger', 'stats', 'signals', 'tabletPanel'].forEach(i => $(i).style.display = 'none'); caption(''); objective(''); setActive({});
+  $('homeTitle').textContent = 'La cameretta di ' + N(); $('homeLead').textContent = 'Una storia da giocare. Quando arriva la rabbia, decidi tu che cosa fa ' + N() + '.';
+  placeKid(.2, -.4, 0); standUp(); setMood('felice'); overlay('home', true);
+}
+
+/* =====================================================================
+   MINIGIOCHI SBLOCCABILI (rinforzanti ma rilassanti, senza sconfitte)
+   ===================================================================== */
+function playMinigame(kind) {
+  return new Promise(done => {
+    const area = $('play'); overlay('play', true);
+    area.querySelectorAll('.bonus-el,.spark,.road,.target,.pow').forEach(e => e.remove());
+    let left = Number(cfg().secondiBonus), score = 0, loopId = null;
+    $('playTimer').textContent = left + ' s'; $('playScore').textContent = kind === 'corsa' ? '⭐ 0' : '🥋 0';
+    $('playHint').textContent = kind === 'corsa' ? 'Tocca a sinistra o a destra per cambiare corsia' : 'Colpisci i bersagli con calma';
+    const add = () => { score++; $('playScore').textContent = (kind === 'corsa' ? '⭐ ' : '🥋 ') + score; };
+    if (kind === 'corsa') {
+      area.style.background = '#7cc47f';
+      const road = document.createElement('div'); road.className = 'road'; area.appendChild(road);
+      [1, 2].forEach(i => { const l = document.createElement('div'); l.className = 'lane-line'; l.style.left = 'calc(' + (i * 33.3) + '% - 3px)'; road.appendChild(l); });
+      const car = document.createElement('div'); car.className = 'bonus-el rcar'; car.textContent = '🏎️'; road.appendChild(car);
+      let lane = 1; const lx = i => ((i + .5) * 33.3) + '%'; car.style.left = lx(lane);
+      area.onpointerdown = e => { lane = Math.max(0, Math.min(2, lane + (e.clientX < innerWidth / 2 ? -1 : 1))); car.style.left = lx(lane); tone(420, .06, 'triangle', .05); };
+      const stars = []; let lt = performance.now(), sp = 0;
+      const step = now => { const dt = now - lt; lt = now; sp += dt;
+        if (sp > 1100) { sp = 0; const st = document.createElement('div'); st.className = 'bonus-el'; st.style.fontSize = '46px'; st.textContent = '⭐'; st.dataset.lane = Math.floor(Math.random() * 3); st.style.left = 'calc(' + lx(+st.dataset.lane) + ' - 23px)'; st.dataset.y = -60; road.appendChild(st); stars.push(st); }
+        const H = road.clientHeight;
+        for (let i = stars.length - 1; i >= 0; i--) { const st = stars[i], y = +st.dataset.y + dt * .16; st.dataset.y = y; st.style.top = y + 'px';
+          if (y > H - 150 && y < H - 40 && +st.dataset.lane === lane) { const r = st.getBoundingClientRect(); burst(r.left + 23, r.top + 23, '#ffd23f'); [660, 880].forEach((f, k) => setTimeout(() => tone(f, .12, 'triangle', .07), k * 90)); st.remove(); stars.splice(i, 1); add(); }
+          else if (y > H) { st.remove(); stars.splice(i, 1); } }
+        loopId = requestAnimationFrame(step); };
+      loopId = requestAnimationFrame(step);
+    } else {
+      area.style.background = '#d9b98c'; let combo = 0;
+      const spawn = () => { area.querySelectorAll('.target').forEach(t => { t.remove(); combo = 0; });
+        const t = document.createElement('div'); t.className = 'target'; t.style.left = (60 + Math.random() * (innerWidth - 230)) + 'px'; t.style.top = (80 + Math.random() * (innerHeight - 250)) + 'px';
+        t.addEventListener('pointerdown', e => { e.stopPropagation(); combo++; add(); t.remove();
+          const pw = document.createElement('div'); pw.className = 'pow'; pw.textContent = combo >= 3 ? 'COMBO x' + combo + '!' : ['POW!', 'HIYA!', 'BAM!'][Math.floor(Math.random() * 3)];
+          pw.style.left = (e.clientX - 50) + 'px'; pw.style.top = (e.clientY - 40) + 'px'; area.appendChild(pw);
+          pw.animate([{ transform: 'scale(.5)', opacity: 1 }, { transform: 'scale(1.3) translateY(-30px)', opacity: 0 }], { duration: 800 }); setTimeout(() => pw.remove(), 800);
+          burst(e.clientX, e.clientY, '#ffd23f', 18); tone(200 + combo * 40, .15, 'square', .05); });
+        area.appendChild(t); };
+      spawn(); loopId = setInterval(spawn, 1700);
+    }
+    const timer = setInterval(() => { left--; $('playTimer').textContent = left + ' s';
+      if (left <= 0) { clearInterval(timer); cancelAnimationFrame(loopId); clearInterval(loopId); area.onpointerdown = null;
+        area.querySelectorAll('.bonus-el,.road,.target').forEach(e => e.remove()); area.style.background = ''; overlay('play', false); done(); } }, 1000);
+  });
+}
+function burst(x, y, color, n = 14) {
+  for (let i = 0; i < n; i++) { const s = document.createElement('div'); s.className = 'spark'; s.style.background = color; s.style.left = x + 'px'; s.style.top = y + 'px'; $('play').appendChild(s);
+    const a = Math.random() * Math.PI * 2, d = 40 + Math.random() * 90;
+    s.animate([{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d}px)`, opacity: 0 }], { duration: 700, easing: 'ease-out' }); setTimeout(() => s.remove(), 700); }
+}
+
+/* =====================================================================
+   AREA TERAPISTA
+   ===================================================================== */
+$('gear').onclick = () => { $('pinInput').value = ''; $('pinMsg').textContent = cfg().pin === '1234' ? 'PIN iniziale: 1234 (cambialo nelle impostazioni)' : ''; $('pinModal').classList.add('active'); $('pinInput').focus(); };
+$('pinCancel').onclick = () => $('pinModal').classList.remove('active');
+$('pinOk').onclick = () => { if ($('pinInput').value === cfg().pin) { $('pinModal').classList.remove('active'); openTherapist(); } else $('pinMsg').textContent = 'PIN errato'; };
+$('closeTher').onclick = () => { overlay('therapist', false); $('gear').style.display = ''; if (!S || $('home').classList.contains('active')) goHome(); };
+const FIELDS = [
+  ['nome', 'Nome del personaggio', 'text'],
+  ['livello', 'Livello', 'select', [[1, '1 · Guardo (modeling)'], [2, '2 · Aiuto (con aiuto)'], [3, '3 · Decido io (senza aiuto)'], [4, '4 · Sono forte (tolleranza)']]],
+  ['aiuto', 'Tipo di aiuto al livello 2', 'select', [['completo', 'Completo: etichetta lampeggiante, freccia e voce'], ['parziale', 'Parziale: solo etichetta lampeggiante']]],
+  ['prove', 'Occasioni di scelta per sessione', 'number'],
+  ['vittorie', 'Vittorie al tablet prima delle sconfitte', 'number'],
+  ['respiri', 'Respiri nella pausa', 'number'],
+  ['secondiBonus', 'Secondi di gioco sbloccato', 'number'],
+  ['secondiAiutoRitardato', 'Secondi prima dell\'aiuto ritardato (liv. 3–4)', 'number'],
+  ['criterio', 'Criterio di padronanza (%)', 'number'],
+  ['sessioniCriterio', 'Sessioni consecutive per il criterio', 'number'],
+  ['voce', 'Voce narrante', 'select', [['true', 'Sì'], ['false', 'No']]],
+  ['pin', 'PIN terapista', 'text']
+];
+function openTherapist() {
+  overlay('therapist', true); $('gear').style.display = 'none';
+  $('form').innerHTML = FIELDS.map(([k, label, type, opts]) => { const v = cfg()[k];
+    const input = type === 'select' ? '<select data-k="' + k + '">' + opts.map(([ov, ol]) => '<option value="' + ov + '"' + (String(ov) === String(v) ? ' selected' : '') + '>' + ol + '</option>').join('') + '</select>'
+      : '<input data-k="' + k + '" type="' + type + '" value="' + v + '"' + (type === 'number' ? ' step="any"' : '') + '>';
+    return '<label>' + label + input + '</label>'; }).join('');
+  renderData();
+}
+$('saveCfg').onclick = () => { document.querySelectorAll('#form [data-k]').forEach(el => { const k = el.dataset.k; let v = el.value; if (k === 'voce') v = v === 'true'; else if (typeof DEFAULT_CFG[k] === 'number') v = Number(v); db.cfg[k] = v; });
+  save(); renderData(); $('savedNote').textContent = 'Salvato.'; setTimeout(() => $('savedNote').textContent = '', 2000); };
+function summary(s) {
+  const occ = s.prove.filter(t => ['indipendente', 'con_aiuto', 'problema', 'anticipata'].includes(t.tipo));
+  const ind = s.prove.filter(t => t.tipo === 'indipendente' || t.tipo === 'anticipata').length, aid = s.prove.filter(t => t.tipo === 'con_aiuto').length;
+  const porta = s.prove.filter(t => t.scelta === 'porta').length, tab = s.prove.filter(t => t.tipo === 'problema' && t.scelta === 'tablet').length;
+  const lats = s.prove.filter(t => t.latenzaMs != null && t.tipo !== 'problema').map(t => t.latenzaMs);
+  return { occ: occ.length, ind, aid, porta, tab, lat: lats.length ? (lats.reduce((a, b) => a + b, 0) / lats.length / 1000).toFixed(1) : '', pct: occ.length ? Math.round(ind / occ.length * 100) : null };
+}
+function renderData() {
+  const ss = db.sessions;
+  const rows = ss.slice().reverse().map(s => { const m = summary(s), d = new Date(s.inizio);
+    return '<tr><td>' + d.toLocaleDateString('it-IT') + ' ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + '</td><td>' + s.livello + (s.aiuto ? ' (' + s.aiuto + ')' : '') + '</td><td>' + m.occ + '</td><td>' + m.ind + '</td><td>' + m.aid + '</td><td>' + m.porta + '</td><td>' + m.tab + '</td><td>' + (m.pct == null ? '–' : m.pct + '%') + '</td><td>' + (m.lat ? m.lat + ' s' : '–') + '</td></tr>'; }).join('');
+  $('sessTable').innerHTML = ss.length ? '<table><tr><th>Data</th><th>Livello</th><th>Occasioni</th><th>Pause indipendenti</th><th>Pause con aiuto</th><th>Porta sbattuta</th><th>Tablet lanciato</th><th>% indipendenti</th><th>Latenza media</th></tr>' + rows + '</table>' : '<p class="note">Nessuna sessione registrata.</p>';
+  const c = cfg(), lv = Number(c.livello), lastS = ss.filter(s => s.livello === lv && lv > 1).slice(-c.sessioniCriterio);
+  let adv;
+  if (lv === 1) adv = 'Livello 1: dopo 1–2 visioni del modello, passa al livello 2 con aiuto completo.';
+  else if (lastS.length >= c.sessioniCriterio && lastS.every(s => (summary(s).pct || 0) >= c.criterio)) adv = 'Criterio raggiunto al livello ' + lv + (lv === 2 && c.aiuto === 'completo' ? ': passa all\'aiuto parziale.' : (lv < 4 ? ': puoi passare al livello ' + (lv + 1) + '.' : ': programma la generalizzazione nel gioco reale.'));
+  else adv = 'Criterio non ancora raggiunto al livello attuale (' + c.criterio + '% per ' + c.sessioniCriterio + ' sessioni consecutive).';
+  $('advice').innerHTML = '<div class="advice">' + adv + '</div>';
+  drawChart(ss.filter(s => s.livello > 1));
+}
+function drawChart(ss) {
+  const W = 760, H = 220, L = 44, R = 16, T = 14, B = 30, x = i => L + (ss.length <= 1 ? (W - L - R) / 2 : i * (W - L - R) / (ss.length - 1)), y = v => T + (1 - v / 100) * (H - T - B);
+  let g = '';
+  [0, 50, 100].forEach(v => g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#e3e9f0"/><text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" font-size="12" text-anchor="end" fill="#5b6b82">' + v + '%</text>');
+  g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(cfg().criterio) + '" y2="' + y(cfg().criterio) + '" stroke="#4caf6e" stroke-dasharray="6 5"/>';
+  const pts = ss.map((s, i) => ({ i, v: summary(s).pct, lv: s.livello })).filter(p => p.v != null);
+  for (let k = 1; k < pts.length; k++) if (pts[k].lv === pts[k - 1].lv) g += '<line x1="' + x(pts[k - 1].i) + '" y1="' + y(pts[k - 1].v) + '" x2="' + x(pts[k].i) + '" y2="' + y(pts[k].v) + '" stroke="#3b82c4" stroke-width="2"/>';
+  for (let k = 1; k < ss.length; k++) if (ss[k].livello !== ss[k - 1].livello) { const xm = (x(k) + x(k - 1)) / 2; g += '<line x1="' + xm + '" x2="' + xm + '" y1="' + T + '" y2="' + (H - B) + '" stroke="#8a97a8"/><text x="' + (xm + 4) + '" y="' + (T + 10) + '" font-size="12" fill="#5b6b82">liv. ' + ss[k].livello + '</text>'; }
+  pts.forEach(p => g += '<circle cx="' + x(p.i) + '" cy="' + y(p.v) + '" r="5" fill="#3b82c4"/>');
+  ss.forEach((s, i) => g += '<text x="' + x(i) + '" y="' + (H - 10) + '" font-size="12" text-anchor="middle" fill="#5b6b82">' + (i + 1) + '</text>');
+  if (!ss.length) g += '<text x="380" y="110" text-anchor="middle" fill="#5b6b82" font-size="14">Ancora nessun dato dei livelli 2–4</text>';
+  $('chart').innerHTML = g;
+}
+function csv() {
+  const lines = [['sessione', 'inizio', 'livello', 'aiuto_livello2', 'ora', 'tipo', 'scelta', 'aiuto_dato', 'latenza_s', 'rabbia', 'gioco_bonus'].join(';')];
+  db.sessions.forEach(s => s.prove.forEach(t => lines.push([s.id, s.inizio, s.livello, s.aiuto, t.ora, t.tipo, t.scelta || '', t.aiuto || '', t.latenzaMs != null ? (t.latenzaMs / 1000).toFixed(1) : '', t.rabbia ?? '', t.bonus || ''].join(';'))));
+  return lines.join('\n');
+}
+$('exportCsv').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv()], { type: 'text/csv' })); a.download = 'cameretta-dati.csv'; a.click(); };
+$('copyCsv').onclick = async () => { try { await navigator.clipboard.writeText(csv()); $('copyNote').textContent = 'Dati copiati: incollali in un foglio di calcolo.'; } catch (e) { $('copyNote').textContent = 'Copia non consentita qui.'; } };
+$('clearData').onclick = () => $('confirmModal').classList.add('active');
+$('confirmNo').onclick = () => $('confirmModal').classList.remove('active');
+$('confirmYes').onclick = () => { db.sessions = []; save(); $('confirmModal').classList.remove('active'); renderData(); };
+
+setMood('felice'); goHome();
+</script>
+</body>
+</html>
