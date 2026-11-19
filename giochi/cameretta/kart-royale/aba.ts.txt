@@ -7,7 +7,8 @@
  *  - con `esito=vinci` tiene gli avversari dietro al giocatore, con `esito=perdi`
  *    fa vincere di poco un rivale (la "regia" della gara, vedi AI.ts);
  *  - quando il giocatore taglia il traguardo avvisa la pagina che lo contiene
- *    con `postMessage({ sorgente: 'kart-royale', tipo: 'fine', posizione })`.
+ *    con `postMessage({ sorgente: 'kart-royale', tipo: 'fine', posizione })`;
+ *  - durante la gara manda due volte al secondo `{ tipo: 'stato', posizione, progresso }`.
  */
 const q = new URLSearchParams(location.search);
 export type Esito = '' | 'vinci' | 'perdi';

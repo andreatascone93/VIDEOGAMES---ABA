@@ -3,7 +3,10 @@ export const DEFAULT_CFG = {
   nome: 'Francesco', livello: 2, aiuto: 'completo', prove: 3,
   vittorie: 2,            // partite al tablet vinte (facili) prima delle sconfitte
   sconfitte: 2,           // sconfitte consecutive che portano la rabbia in zona arancione
-  respiri: 3, secondiPremio: 30, secondiBlaster: 40, secondiAiutoRitardato: 10,
+  respiri: 3,             // respiri a tempo di musica nell'attività "ascolta la musica"
+  secondiAttivita: 25,    // durata minima delle altre attività che calmano (disegno)
+  saccoCalma: false,      // il sacco da boxe è anche una scelta per calmarsi (di base è solo un gioco premio)
+  secondiPremio: 30, secondiBlaster: 40, secondiAiutoRitardato: 10,
   criterio: 80, sessioniCriterio: 3, voce: true, pin: '1234'
 };
 const STORE = 'giochiAba.cameretta.v2';
@@ -45,6 +48,8 @@ export function objective(t) { const o = $('objective'); o.textContent = t || ''
 export function toast(t, ms = 1600) { const el = $('toast'); el.textContent = t; el.getAnimations().forEach(a => a.cancel()); el.animate([{ opacity: 0, transform: 'translate(-50%,-30%) scale(.7)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .15 }, { opacity: 1, transform: 'translate(-50%,-55%) scale(1)', offset: .8 }, { opacity: 0, transform: 'translate(-50%,-70%) scale(1)' }], { duration: ms, easing: 'ease-out' }); }
 export function heartbeat() { tone(62, .16, 'sine', .35); tone(55, .2, 'sine', .3, .2); }
 export function overlay(id, on) { $(id).classList.toggle('active', on); }
+// dissolvenza a nero, con un testo facoltativo al centro (cambio di stanza, salto di tempo)
+export async function buio(on, testo = '') { const f = $('fade'); f.firstElementChild.textContent = testo; f.classList.toggle('active', on); await sleep(on ? 520 : 420); }
 
 // tween semplice guidato dal ciclo di animazione principale
 const tweens = [];

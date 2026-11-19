@@ -6,7 +6,7 @@ Piccoli videogiochi da usare dentro un intervento di analisi del comportamento a
 
 | Gioco | Comportamento target | Stato |
 | --- | --- | --- |
-| [La cameretta di Francesco](giochi/cameretta/index.html) | Scegliere la pausa quando sale la rabbia durante il gioco al tablet (autoregolazione) | Prototipo 3D giocabile: cameretta, partite vere al tablet (Kart Royale, Blaster Arena), giochi premio |
+| [La cameretta di Francesco](giochi/cameretta/index.html) | Posare il tablet quando sale la rabbia e ritrovare la calma con un'altra attività (autoregolazione) | Prototipo 3D giocabile: cameretta e salone, partite vere al tablet con la rabbia in tempo reale, attività che calmano (musica, disegno, mamma, costruzioni), genitori, giochi premio |
 | [Il gioco della pausa](giochi/pausa/index.html) | Prima bozza 2D | Archiviata (troppo infantile per l'età target) |
 
 ## Come provarlo
@@ -32,7 +32,7 @@ Ogni gioco dichiara le sue contingenze nel modello A-B-C (operazione motivaziona
 ## Crediti e licenze
 
 - Personaggi, kart, blaster, decorazioni: [Kenney](https://kenney.nl) (CC0).
-- Mobili: [KayKit Furniture Bits](https://kaylousberg.itch.io) (CC0), tramite [series-ai/jam-ready-assets](https://github.com/series-ai/jam-ready-assets).
+- Mobili: [KayKit Furniture Bits](https://kaylousberg.itch.io) (CC0) e Kenney Furniture Kit (CC0), tramite [series-ai/jam-ready-assets](https://github.com/series-ai/jam-ready-assets).
 - [Kart Royale](https://github.com/ryancampbell/kart-royale) di Ryan Campbell (MIT), modificato per la modalità ABA: vedi `giochi/cameretta/kart-royale/LICENSE` e `modifiche-aba.patch`.
 - [Three.js](https://threejs.org) r160 (MIT).
 

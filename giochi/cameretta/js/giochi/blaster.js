@@ -14,7 +14,7 @@ function canvasTex(w, h, draw, rep = [1, 1]) {
 }
 const normalizza = (o, misura, asse = 'max') => { const b = new THREE.Box3().setFromObject(o), s = b.getSize(new THREE.Vector3()); const m = asse === 'max' ? Math.max(s.x, s.y, s.z) : s[asse]; o.scale.multiplyScalar(misura / m); return o; };
 
-export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = 'Francesco' } = {}) {
+export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = 'Francesco', onEvento = () => {} } = {}) {
   const perdi = esito === 'perdi';
   // ---------------------------------------------------------------- DOM
   box.innerHTML = `
@@ -131,7 +131,7 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
     b.colpito = true; b.giu = 0;
     if (chi === 'io') { punti++; tone(880, .08, 'triangle', .09); tone(1320, .12, 'triangle', .07, .07); popup('+1', b.t.getWorldPosition(w), '#ffc94a'); }
     else { puntiMax++; tone(330, .1, 'triangle', .06); popup('+1 MAX', b.t.getWorldPosition(w), '#ff7a7a'); }
-    aggiornaHud(); return true;
+    aggiornaHud(); onEvento({ tipo: 'punto', chi: chi === 'io' ? 'io' : 'rivale', punti, puntiRivale: puntiMax }); return true;
   }
 
   // regia: Max decide se "vuole" un bersaglio
@@ -244,7 +244,7 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
   addEventListener('keydown', kd); addEventListener('keyup', ku);
 
   // ---------------------------------------------------------------- ciclo
-  let last = performance.now(), raf = 0, tLimite = 0;
+  let last = performance.now(), raf = 0, tic = 0;
   function aggiornaGiocatore(dt) {
     let mx = 0, mz = 0;
     if (joy) { mx += joy.dx; mz += joy.dy; }
@@ -266,6 +266,7 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
     max.update(dt);
     if (inCorso) {
       tempo -= dt; $('.bl-t').style.width = Math.max(0, tempo / durata * 100) + '%';
+      tic -= dt; if (tic <= 0) { tic = .25; onEvento({ tipo: 'tempo', progresso: Math.min(1, 1 - tempo / durata) }); }
       spawn(dt); aggiornaMax(dt);
       if (tempo <= 0) termina();
     }
@@ -284,8 +285,9 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
   }
   (async () => {
     const msg = $('.bl-msg');
-    for (const t of ['3', '2', '1']) { msg.textContent = t; tone(440, .12, 'triangle', .07); await sleep(700); }
-    msg.textContent = 'VIA!'; tone(880, .25, 'triangle', .08); inCorso = true;
+    for (const t of ['3', '2', '1']) { if (fine) return; msg.textContent = t; tone(440, .12, 'triangle', .07); await sleep(700); }
+    if (fine) return;
+    msg.textContent = 'VIA!'; tone(880, .25, 'triangle', .08); inCorso = true; onEvento({ tipo: 'via' });
     await sleep(600); msg.textContent = '';
     setTimeout(() => { const h = $('.bl-help'); if (h) h.style.display = 'none'; }, 5000);
   })();
@@ -293,7 +295,7 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
   return {
     fine: fineP,
     distruggi() {
-      cancelAnimationFrame(raf); ro.disconnect(); removeEventListener('keydown', kd); removeEventListener('keyup', ku);
+      inCorso = false; fine = true; cancelAnimationFrame(raf); ro.disconnect(); removeEventListener('keydown', kd); removeEventListener('keyup', ku);
       renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); box.innerHTML = '';
     },
     // per i test automatici

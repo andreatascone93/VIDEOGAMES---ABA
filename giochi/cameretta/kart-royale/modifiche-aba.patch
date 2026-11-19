@@ -81,7 +81,7 @@ index 1838bd1..a67b357 100644
    countdown = 3;
    lapTimes: number[] = [];
 diff --git a/src/main.ts b/src/main.ts
-index af30423..f3f58be 100644
+index af30423..6ab94dd 100644
 --- a/src/main.ts
 +++ b/src/main.ts
 @@ -1,3 +1,4 @@
@@ -89,7 +89,7 @@ index af30423..f3f58be 100644
  import * as THREE from 'three';
  import { RaceState, type Ctx, type System } from './types';
  import { Bus } from './core/Bus';
-@@ -191,6 +192,12 @@ async function boot() {
+@@ -191,6 +192,19 @@ async function boot() {
    // straight into a countdown skipped the entire front end — it dated from the
    // original scaffold, written before there was a front end to skip.
    bootProgress(1, 'ready');
@@ -98,6 +98,13 @@ index af30423..f3f58be 100644
 +    ctx.race.selectKart(0);
 +    ctx.race.reset();
 +    notifica({ tipo: 'pronto' });
++    // stato della gara due volte al secondo: la pagina che contiene il gioco segue posizione e avanzamento
++    setInterval(() => {
++      const r = ctx.race;
++      if (r.state !== RaceState.Racing) return;
++      const tot = (ctx.track.length || 1) * (r.totalLaps || 1);
++      notifica({ tipo: 'stato', posizione: r.player.place, progresso: Math.max(0, Math.min(1, r.player.raceDistance / tot)) });
++    }, 500);
 +  }
  
    // Press R to record. Deliberately not a System: it owns no scene state and

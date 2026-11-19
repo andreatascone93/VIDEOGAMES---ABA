@@ -20,35 +20,47 @@ La frustrazione nasce da partite vere al tablet: il giocatore gioca davvero, pri
 Le prime partite si vincono facilmente: il gioco diventa desiderabile e la perdita successiva pesa davvero (momento comportamentale e valore del rinforzatore). Il numero di vittorie e sconfitte è un parametro del terapista, non una costante.
 *Dove:* impostazioni `vittorie` e `sconfitte`; dal secondo giro una sola vittoria.
 
-### 1.4 Rendere osservabile lo stato interno, con più segnali ridondanti
-La rabbia si vede in cinque modi contemporanei: barra a 5 livelli con il nome dello stato, segnali del corpo scritti ("denti stretti", "pugni stretti", "cuore che batte forte"), espressione del viso, rossore, tremore e battito del cuore udibile. Un bambino che legge e riconosce già la rabbia ha bisogno che il gioco la sottolinei, non che la spieghi.
-*Dove:* `setRabbia` in `main.js`, `js/volto.js`.
+### 1.4 Lo stato interno si vede, e si muove mentre succedono le cose
+La rabbia non cambia a scatti tra una partita e l'altra: sale e scende durante la partita, nel momento in cui il rivale segna, sorpassa o il tempo sta per finire. È così che la rabbia arriva nella vita reale, ed è lì che il bambino deve imparare a notarla. Resta visibile in più modi insieme: barra continua con cinque zone e il nome dello stato, segnali del corpo scritti ("denti stretti", "pugni stretti", "cuore che batte forte"), espressione del viso, rossore, tremore e battito del cuore udibile. Un bambino che legge e riconosce già la rabbia ha bisogno che il gioco la sottolinei, non che la spieghi.
+*Dove:* `js/rabbia.js`, `partitaConRabbia` in `main.js`, `js/volto.js`.
 
-### 1.5 L'SD è un livello preciso, ma si rinforza anche prima
-La scelta viene proposta in zona arancione (SD). Una pausa scelta prima, in zona gialla, si registra come `anticipata` e si rinforza come indipendente: insegna ad agire all'inizio della catena, non solo al picco.
-*Dove:* pulsante "Posa il tablet e fai una pausa" nel risultato della prima sconfitta.
+### 1.5 L'SD è una soglia precisa, la risposta è disponibile sempre
+L'SD è l'ingresso in zona arancione (rabbia a 60 su 100). Il pulsante "Posa il tablet" però è presente per tutta la partita, non compare solo al momento giusto: se comparisse da solo farebbe già da suggerimento. Posare in zona gialla si registra come `anticipata` e si rinforza come una risposta indipendente, perché insegna ad agire all'inizio della catena e non al picco. Posare quando si è tranquilli non conta: la partita continua.
+*Dove:* `#posaBtn` in `index.html`, `inizioSD` e `dopoPosa` in `main.js`.
 
-### 1.6 Le scelte sono azioni nel mondo, non risposte a un quiz
-Il giocatore porta il personaggio verso l'angolo calmo, la porta o il tablet. La risposta target è un comportamento motorio nel contesto simulato, più vicino a quello reale di un pulsante "A, B o C".
+### 1.6 La risposta target è una catena: smettere, poi fare altro
+Posare il tablet è solo il primo anello. La calma non arriva stando fermi in un angolo: arriva facendo un'altra cosa, per il tempo che serve. Il gioco quindi chiede due risposte in sequenza (posare, scegliere un'attività) e la rabbia scende soltanto mentre l'attività procede. Le scelte restano azioni nel mondo: il giocatore porta il personaggio alla poltrona, alla scrivania, in salone.
+*Dove:* `apriScelte`, `scelta` in `main.js`; `c.calma(k)` in `js/attivita.js`.
 
-### 1.7 Rinforzo immediato, multiplo e legato alla funzione
-Dopo la pausa arrivano subito: sollievo (la rabbia scende respiro dopo respiro, il viso si distende), potere (XP, Forza, il personaggio cresce, il sacco vola più lontano) e accesso ad attività ugualmente desiderabili (sacco da boxe, gara di kart vinta). I rinforzatori competono con la funzione del comportamento problema: sfogo fisico (sacco) e voglia di vincere (gara).
+### 1.7 Più alternative adeguate, di tipo diverso
+Una sola risposta corretta non generalizza. Le alternative coprono funzioni diverse: da solo (musica con le cuffie, disegno), comunicazione funzionale (dire alla mamma che si è arrabbiati, invece di urlarlo), gioco sociale (costruzioni a turno con altri bambini). Ogni occasione registra quale è stata scelta, così il terapista vede le preferenze e può lavorare su quelle evitate.
+*Dove:* `js/attivita.js` (`musica`, `disegno`, `mamma`, `costruzioni`), colonna "Attività scelte" in `js/terapista.js`.
 
-### 1.8 Estinzione per le scelte problema, senza spettacolo
-Porta sbattuta e tablet lanciato non danno XP, premi o giochi: il personaggio resta arrabbiato e il tablet si spegne (conseguenza naturale), poi si riprova. Gli effetti di queste scelte devono restare più brevi e meno "divertenti" di quelli della scelta target, altrimenti diventano rinforzo sensoriale.
+### 1.8 Rinforzo immediato, multiplo e legato alla funzione
+Dopo l'attività arrivano subito: sollievo (la rabbia è scesa passo dopo passo, il viso è disteso), potere (XP, Forza, il personaggio cresce) e accesso ad attività ugualmente desiderabili (sacco da boxe, gara di kart vinta). Il tablet resta suo. I rinforzatori competono con la funzione del comportamento problema: movimento fisico (sacco) e voglia di vincere (gara).
+*Dove:* `calmaRitrovata`, `premio` in `main.js`.
 
-### 1.9 Gerarchia di aiuti e fading
-Livello 1 modeling (il personaggio sceglie da solo), livello 2 aiuto completo (etichetta che pulsa, freccia, voce) o parziale (solo etichetta), livello 3 nessun aiuto con aiuto ritardato dopo N secondi, livello 4 tolleranza (più sconfitte, pausa più breve). Il gioco suggerisce quando cambiare livello in base al criterio di padronanza.
+### 1.9 Sfogo fisico: premio, non strumento per calmarsi
+Il sacco da boxe è di base solo un gioco premio, a calma già ritrovata. Colpire qualcosa mentre si è arrabbiati rischia di mantenere la rabbia invece di ridurla (la ricerca sulla catarsi, per esempio Bushman 2002, va in questa direzione) e allena una risposta vicina a quella da ridurre. Il terapista può comunque offrirlo tra le scelte per calmarsi con l'impostazione `saccoCalma`: è una decisione clinica da prendere con il supervisore, non una scelta del gioco.
+*Dove:* `saccoCalma` in `core.js` e `terapista.js`, `giocoSacco({ calma })` in `main.js`.
 
-### 1.10 Ogni occasione è un dato
-Si registra: tipo (`indipendente`, `con_aiuto`, `anticipata`, `problema`, `modello_osservato`), latenza, aiuto dato, livello di rabbia, partite giocate prima, premio scelto. Ogni partita al tablet registra esito programmato e risultato reale. Criterio standard: 80% di pause indipendenti per 3 sessioni consecutive.
+### 1.10 Conseguenze realistiche per i comportamenti problema, senza spettacolo
+Le conseguenze sono quelle di casa: arriva un genitore, dice due frasi brevi con voce calma, porta via il tablet. Porta sbattuta o urla: tablet tolto per il resto della giornata. Tablet lanciato: schermo rotto, niente tablet per qualche giorno. Continuare a giocare da arrabbiati porta a perdere ancora e a esplodere. In nessun caso arrivano XP, premi o sollievo: il personaggio resta arrabbiato. L'attenzione del genitore è breve e neutra, per non diventare essa stessa un rinforzo, e gli effetti restano più brevi e meno "divertenti" di quelli delle scelte adeguate.
+*Dove:* `comportamentoProblema`, `visita`, `esplosione`, `saltoDiTempo` in `main.js`.
+
+### 1.11 Gerarchia di aiuti e fading
+Livello 1 modeling (il personaggio fa tutto da solo e il giocatore osserva), livello 2 aiuto completo (elemento che pulsa, freccia, voce) o parziale (solo l'elemento che pulsa), livello 3 nessun aiuto con aiuto ritardato dopo N secondi, livello 4 tolleranza (più sconfitte, attività più breve). L'aiuto vale per entrambi gli anelli della catena: posare il tablet e scegliere l'attività. Il gioco suggerisce quando cambiare livello in base al criterio di padronanza.
+*Dove:* `inizioSD`, `aiutoPosa`, `aiutiScelta`, `modeling` in `main.js`.
+
+### 1.12 Ogni occasione è un dato
+Si registra: tipo (`indipendente`, `con_aiuto`, `anticipata`, `problema`, `modello_osservato`), latenza dall'ingresso in zona arancione al tablet posato, aiuto dato, valore della rabbia (0–100), se il tablet è stato posato a metà partita o dopo, rivincite giocate dopo l'arancione, attività scelta, premio scelto. Ogni partita registra esito programmato e risultato reale. Criterio standard: 80% di risposte indipendenti per 3 sessioni consecutive.
 *Dove:* `record` in `main.js`, `js/terapista.js`.
 
-### 1.11 Contesto simile alla vita reale, per generalizzare
-Cameretta, tablet, porta: gli stessi stimoli della situazione reale. Dopo la padronanza nel gioco va programmata la generalizzazione nel gioco reale al tablet (stessa barra della rabbia, stesso angolo calmo).
+### 1.13 Contesto simile alla vita reale, per generalizzare
+Cameretta, tablet, porta, salone, mamma, papà, altri bambini: gli stessi stimoli e le stesse persone della situazione reale. Dopo la padronanza nel gioco va programmata la generalizzazione nel gioco reale al tablet (stessa barra della rabbia, stesse attività alternative disponibili in casa).
 
-### 1.12 Etica e privacy
-Impostazioni protette da PIN; dati solo sul dispositivo; nessun nome reale del bambino; uso dentro un programma supervisionato, con consenso dei genitori e assenso del bambino. Le sconfitte programmate sono un'esposizione voluta: le decide il terapista.
+### 1.14 Etica e privacy
+Impostazioni protette da PIN; dati solo sul dispositivo; nessun nome reale del bambino; uso dentro un programma supervisionato, con consenso dei genitori e assenso del bambino. Le sconfitte programmate sono un'esposizione voluta: le decide il terapista. I genitori nel gioco fanno da modello anche per i genitori veri: poche parole, tono calmo, conseguenza coerente.
 
 ---
 
@@ -63,20 +75,28 @@ Il giocatore cammina dove vuole, ma la storia avanza solo con le interazioni chi
 ### 2.3 La regia deve essere credibile
 L'avversario resta vicino: perde di poco nelle partite facili e vince di poco in quelle difficili. Ogni tanto sbaglia un colpo anche quando "vuole" vincere. Mai sconfitte umilianti. Nel kart il rivale arriva primo con pochi metri di vantaggio; nel blaster Max chiude con 2–4 punti di margine.
 
-### 2.4 I giochi premio sono rinforzanti ma rilassanti
+### 2.4 Il mondo reagisce
+Le azioni hanno effetti che restano e che coinvolgono altre persone: la porta sbattuta fa arrivare il papà, il tablet lanciato ha lo schermo crepato, il disegno finito resta appeso al muro, la mamma risponde in modo diverso a quello che le si dice. Un mondo che reagisce rende credibili le conseguenze, e le conseguenze credibili sono quelle che si ritrovano a casa.
+*Dove:* `visita`, `rompiTablet`, `room.carta` (disegno al muro), `battute` in `attivita.js`.
+
+### 2.5 Le attività alternative sono piccoli giochi veri
+Disegnare, costruire una torre a turno, parlare scegliendo le frasi: ogni alternativa si gioca davvero e dura abbastanza da assorbire. Un'animazione da guardare non compete con il tablet; un'attività in cui si fa qualcosa sì. La barra della rabbia scende più in fretta quando il giocatore partecipa (per esempio mentre disegna) che quando aspetta.
+*Dove:* `js/attivita.js`.
+
+### 2.6 I giochi premio sono rinforzanti ma rilassanti
 Nessuna condizione di sconfitta, tempo breve (30 s), potenza che cresce con la Forza accumulata: la storia di rinforzo si vede.
 
-### 2.5 Dare scelta
-Il giocatore sceglie il gioco al tablet (corsa o sparatutto) e il gioco premio. La scelta è essa stessa rinforzante e aumenta la motivazione.
+### 2.7 Dare scelta
+Il giocatore sceglie il gioco al tablet (corsa o sparatutto), l'attività per ritrovare la calma e il gioco premio. La scelta è essa stessa rinforzante e aumenta la motivazione.
 
-### 2.6 Sessioni brevi
-Due o tre occasioni per sessione, 3–4 minuti ciascuna. Le partite durano circa 40–60 secondi (un giro di pista, una sfida a tempo).
+### 2.8 Sessioni brevi
+Due o tre occasioni per sessione, 3–5 minuti ciascuna. Le partite durano circa 40–60 secondi (un giro di pista, una sfida a tempo), le attività circa 25 secondi (regolabili).
 
-### 2.7 Accessibilità
-Narrazione vocale (italiano), didascalie grandi, pulsanti grandi per il tocco, layout pensato per tablet in orizzontale, comandi da tastiera per il computer.
+### 2.9 Accessibilità
+Narrazione vocale (italiano), didascalie grandi, fumetti con il nome di chi parla, pulsanti grandi per il tocco, layout pensato per tablet in orizzontale, comandi da tastiera per il computer.
 
-### 2.8 Requisiti per integrare un gioco esterno
-Licenza compatibile (MIT o CC0), funziona offline, ha comandi touch, permette di controllare l'esito (agganci all'intelligenza artificiale degli avversari), può segnalare inizio e fine alla pagina che lo contiene.
+### 2.10 Requisiti per integrare un gioco esterno
+Licenza compatibile (MIT o CC0), funziona offline, ha comandi touch, permette di controllare l'esito (agganci all'intelligenza artificiale degli avversari), può segnalare alla pagina che lo contiene inizio, fine e andamento della partita.
 
 ---
 
@@ -88,40 +108,64 @@ Pagina web senza passaggi di compilazione per il gioco principale: `index.html` 
 ### 3.2 Moduli riutilizzabili
 | Modulo | Cosa fa | Riusabile così com'è? |
 | --- | --- | --- |
-| `core.js` | configurazione, salvataggio, audio, didascalie, tween | sì |
+| `core.js` | configurazione, salvataggio, audio, didascalie, tween, dissolvenza a nero | sì |
 | `assets.js` | caricamento e cache dei glTF, cloni con scheletro | sì |
 | `personaggio.js` | personaggio animato: camminata, animazioni con dissolvenza, pose composte | sì |
 | `volto.js` | espressioni del viso dipinte sulla texture | sì, per i personaggi Kenney |
+| `rabbia.js` | stato emotivo continuo 0–100 con zone, picchi e soglie | sì, per ogni emozione a livelli |
+| `persone.js` | altre persone (stesso scheletro, altra skin e statura) e fumetti | sì |
 | `terapista.js` | impostazioni, grafico, tabella, esportazione | sì, cambiando i campi |
-| `tablet.js` | dispositivo nel gioco con partite vere e regia | sì, per scenari con schermi |
-| `stanza.js`, `main.js` | scena e storia di questo scenario | no, sono specifici |
+| `tablet.js` | dispositivo nel gioco con partite vere, regia ed eventi in tempo reale | sì, per scenari con schermi |
+| `attivita.js` | attività alternative (musica, disegno, dialogo, costruzioni) | in parte: lo schema `calma(k)` sì |
+| `stanza.js`, `salone.js`, `main.js` | scene e storia di questo scenario | no, sono specifici |
 
 ### 3.3 Pipeline del personaggio
 Kenney Animated Characters (CC0): modello FBX più animazioni FBX separate, convertiti nel browser in un solo GLB con GLTFExporter (`strumenti/converti-personaggio.html`). Di ogni FBX si prende la clip più lunga, escludendo "Targeting Pose". Le skin sono PNG scambiabili al volo.
 
 ### 3.4 Pose composte
-Si possono creare pose nuove unendo tracce di clip diverse: "seduto rilassato" = gambe da `racingIdle` più braccia da `idle`. Nella posa di guida il punto di seduta è circa 0,5 m sopra la radice: l'altezza del personaggio seduto si calcola da lì.
+Si possono creare pose nuove unendo tracce di clip diverse: "seduto rilassato" = gambe da `racingIdle` più braccia da `idle`. Nella posa di guida il punto di seduta è circa 0,5 m sopra la radice (per un personaggio alto 1,36 m): l'altezza del personaggio seduto si calcola da lì, in proporzione alla statura.
 
 ### 3.5 Espressioni sulla texture
-Si copia l'atlante della skin in un canvas, si coprono i tratti originali con il colore della pelle, si applica il rossore con `multiply` e si disegnano i tratti nuovi. Si ridisegna solo quando cambia l'umore. Le coordinate del viso sono nel modulo.
+Si copia l'atlante della skin in un canvas, si coprono i tratti originali con il colore della pelle, si applica il rossore con `multiply` e si disegnano i tratti nuovi. Si ridisegna solo quando cambia l'umore o l'intensità (arrotondata a decimi). Le coordinate del viso sono nel modulo.
 
 ### 3.6 Arredi e misure
-Mobili KayKit (CC0) in scala 0,6. Si misurano con `Box3` (mai a occhio) per appoggiare oggetti, calcolare le sedute e definire gli ostacoli della camminata.
+Mobili KayKit (CC0) in scala 0,6–0,75 e Kenney Furniture Kit (CC0) portati a una misura precisa con `Box3`. Niente a occhio: `Box3` per appoggiare gli oggetti e definire gli ostacoli, un raggio dall'alto (`Raycaster`) per l'altezza vera di una seduta, perché il riquadro di un divano comprende schienale e braccioli.
+*Dove:* `sistema` e `sedutaDivano` in `js/salone.js`.
 
-### 3.7 Giochi esterni dentro il gioco
-Kart Royale (MIT) è compilato con Vite (`base: './'`) e modificato con parametri `?aba=1&esito=vinci|perdi&giri=N`. L'elastico degli avversari è in `AI.ts`. Il gioco comunica con `postMessage({ sorgente: 'kart-royale', tipo: 'pronto' | 'fine', posizione })`. Le modifiche stanno in `kart-royale/modifiche-aba.patch` e `aba.ts.txt`, da riapplicare se il progetto originale si aggiorna.
+### 3.7 Motore dell'emozione: base, picco, zone
+Il valore mostrato insegue `base + picco`. La base è l'andamento lento deciso dalla regia (sale con l'avanzare di una partita che si perderà); il picco è la reazione a un evento (punto del rivale, sorpasso) e si spegne in pochi secondi. Le zone sono cinque fasce da 20 punti con isteresi, così la barra non rimbalza sul confine; un aggancio `onZona` avvisa la storia quando si cambia zona; un `tetto` impedisce di superare una soglia quando la storia non lo prevede (per esempio in una partita che si vincerà).
+*Dove:* `js/rabbia.js`.
 
-### 3.8 Prestazioni su tablet
+### 3.8 Protocollo degli eventi di gioco
+Ogni gioco del tablet racconta cosa succede con `onEvento`: `via`, `tempo` (avanzamento 0–1), `punto` (chi ha segnato), `posizione` (sorpassi, solo corsa). La storia traduce gli eventi in rabbia; il gioco non sa niente di ABA. La partita si può interrompere da fuori (`interrompi`), e il risultato dice perché: tablet posato, esplosione, dimostrazione.
+*Dove:* `partita` in `js/tablet.js`, `partitaConRabbia` in `main.js`.
+
+### 3.9 Giochi esterni dentro il gioco
+Kart Royale (MIT) è compilato con Vite (`base: './'`) e modificato con parametri `?aba=1&esito=vinci|perdi&giri=N`. L'elastico degli avversari è in `AI.ts`. Il gioco comunica con `postMessage({ sorgente: 'kart-royale', tipo: 'pronto' | 'stato' | 'fine', posizione, progresso })`: `stato` parte ogni mezzo secondo durante la gara. Se i messaggi di stato non arrivano, l'avanzamento si stima dal tempo trascorso, così la rabbia si muove comunque. Le modifiche stanno in `kart-royale/modifiche-aba.patch` e `aba.ts.txt`, da riapplicare se il progetto originale si aggiorna.
+
+### 3.10 Più stanze
+Ogni stanza è un gruppo che si accende e si spegne; si cambia stanza con una dissolvenza a nero. Ogni stanza ha la sua mappa: limiti, ostacoli, punto d'ingresso, pavimento per il tocco. Le luci di una stanza spenta si spengono con il gruppo.
+*Dove:* `MAPPA`, `mostraStanza`, `cambiaStanza` in `main.js`.
+
+### 3.11 Etichette nel mondo
+Le scelte sono etichette ancorate a punti della scena. Lo stesso punto può portarne più di una (sul tablet: "Continua a giocare" e "Lancia il tablet"): si impilano in righe. Le etichette si creano quando servono e si tolgono subito dopo la scelta. Adeguate e problema hanno lo stesso aspetto: il colore non deve suggerire la risposta.
+*Dove:* `PUNTI`, `setAttivi` in `main.js`.
+
+### 3.12 Altre persone
+Mamma, papà e bambini sono lo stesso modello animato con un'altra skin e un'altra statura; i capelli sono forme semplici agganciate all'osso della testa. Chi parla ha un fumetto con il nome, che segue la testa. Chi aspetta un genitore si mette fuori dal suo percorso, altrimenti i personaggi si attraversano.
+*Dove:* `js/persone.js`, `ATTESA` e `visita` in `main.js`.
+
+### 3.13 Prestazioni su tablet
 Mentre gira un gioco del tablet, la stanza si ridisegna un fotogramma su tre. Pixel ratio massimo 1,75. Ombre 2048 nella stanza e 1024 nell'arena. Il secondo contesto WebGL si distrugge all'uscita.
 
-### 3.9 Inquadrature
-`camera.setViewOffset` sposta il personaggio nella striscia libera accanto al tablet senza cambiare prospettiva. Ogni momento della storia ha la sua inquadratura: stanza, scelta (fissa, tutte le opzioni in vista), viso, tablet, pausa, sacco.
+### 3.14 Inquadrature
+`camera.setViewOffset` sposta il personaggio nella striscia libera accanto al tablet senza cambiare prospettiva. Ogni momento della storia ha la sua inquadratura: stanza, scelta (fissa, tutte le opzioni in vista), salone, viso, tablet, pausa, sacco, più inquadrature fisse per le attività.
 
-### 3.10 Test automatici
-Playwright con swiftshader. Gli elementi che pulsano non sono mai "stabili": si usa `dispatchEvent('pointerdown')`. In modalità `?debug` la camera si può fissare all'istante. La fine delle gare di kart si simula con `postMessage`. La regia del kart si verifica facendo avanzare la simulazione con `race.update(ctx, 1/60)`, perché il rendering software è troppo lento.
+### 3.15 Test automatici
+Playwright con swiftshader. Gli elementi che pulsano non sono mai "stabili": si usa `dispatchEvent('pointerdown')`. Si aspetta la schermata attiva, non l'esistenza di un pulsante: i pulsanti della schermata precedente restano nella pagina. In modalità `?debug` la camera si può fissare all'istante e `window.__app` espone lo stato. Il kart si sostituisce con una pagina finta che manda gli stessi messaggi (`route` più `postMessage`), perché il rendering software è troppo lento per guidare davvero; la regia del kart si verifica facendo avanzare la simulazione con `race.update(ctx, 1/60)`.
 
-### 3.11 Pubblicazione
+### 3.16 Pubblicazione
 L'anteprima su claude.ai accetta solo alcuni tipi di file (html, js, css, json, png, jpg, txt): niente `.glb`, `.gltf` o `.bin`. `strumenti/prepara-anteprima.py` crea una copia con i modelli convertiti in glTF `.json` con i dati incorporati; `assets.js` li carica se `index.html` ha `data-modelli="json"`. L'anteprima blocca anche i download: per i dati serve il pulsante "Copia dati". Il salvataggio locale vale solo per quel dispositivo e quel browser.
 
-### 3.12 Licenze e crediti
-Grafica: Kenney e KayKit (CC0). Kart Royale: MIT. Three.js: MIT. I file di licenza restano accanto agli asset.
+### 3.17 Licenze e crediti
+Grafica: Kenney (Animated Characters, Furniture Kit) e KayKit (CC0). Kart Royale: MIT. Three.js: MIT. I file di licenza restano accanto agli asset.
