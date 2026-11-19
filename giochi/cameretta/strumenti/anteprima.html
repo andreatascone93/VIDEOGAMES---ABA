@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>Anteprima modelli</title><style>body{margin:0}canvas{display:block}</style></head><body>
+<script type="importmap">{ "imports": { "three": "../vendor/three/three.module.js", "three/addons/": "../vendor/three/addons/" } }</script>
+<script type="module">
+import * as THREE from 'three';
+import { Personaggio } from '../js/personaggio.js';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); document.body.appendChild(r.domElement);
+const s = new THREE.Scene(); s.background = new THREE.Color(0xdde8f0); s.add(new THREE.HemisphereLight(0xffffff, 0x888888, 2)); const d = new THREE.DirectionalLight(0xffffff, 2); d.position.set(2, 4, 3); s.add(d);
+const c = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, .1, 50); c.position.set(0, 1.2, 4); c.lookAt(0, .8, 0);
+const grid = new THREE.GridHelper(4, 8); s.add(grid);
+const anims = (new URLSearchParams(location.search).get('a') || 'idle,walk,racingIdle,punch').split(',');
+const ps = [];
+for (let i = 0; i < anims.length; i++) { const p = await Personaggio.crea(); p.root.position.x = (i - (anims.length - 1) / 2) * 1.1; p.play(anims[i]); s.add(p.root); ps.push(p); }
+window.pronto = true;
+const clk = new THREE.Clock(); (function loop() { const dt = clk.getDelta(); ps.forEach(p => p.update(dt)); r.render(s, c); requestAnimationFrame(loop); })();
+</script></body></html>

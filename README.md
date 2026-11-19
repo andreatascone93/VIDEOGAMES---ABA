@@ -6,18 +6,35 @@ Piccoli videogiochi da usare dentro un intervento di analisi del comportamento a
 
 | Gioco | Comportamento target | Stato |
 | --- | --- | --- |
-| [La cameretta di Francesco](giochi/cameretta/index.html) | Scegliere la pausa quando sale la rabbia durante il gioco al tablet (autoregolazione) | Prototipo 3D |
+| [La cameretta di Francesco](giochi/cameretta/index.html) | Scegliere la pausa quando sale la rabbia durante il gioco al tablet (autoregolazione) | Prototipo 3D giocabile: cameretta, partite vere al tablet (Kart Royale, Blaster Arena), giochi premio |
 | [Il gioco della pausa](giochi/pausa/index.html) | Prima bozza 2D | Archiviata (troppo infantile per l'età target) |
 
 ## Come provarlo
 
-Apri `giochi/cameretta/index.html` in un browser (meglio su tablet, in orizzontale). Il gioco usa Three.js (incluso nella cartella, licenza MIT), funziona senza connessione e salva i dati solo sul dispositivo.
+Il gioco va aperto da un indirizzo web, non con doppio clic sul file (i moduli JavaScript non si caricano da `file://`). Tre modi:
+
+- il link pubblicato dell'anteprima;
+- GitHub Pages su questo repository (Impostazioni → Pages → ramo `main`), poi `.../giochi/cameretta/`;
+- in locale: `cd giochi/cameretta && python3 -m http.server 8000`, poi apri `http://localhost:8000`.
+
+Meglio su tablet, in orizzontale. Tutto il necessario è nella cartella (Three.js, modelli, Kart Royale): una volta caricato non serve connessione. I dati restano solo sul dispositivo.
 
 L'area terapista si apre con l'ingranaggio in alto a destra. Il PIN iniziale è `1234`: cambialo subito.
 
 ## Architettura
 
 Ogni gioco dichiara le sue contingenze nel modello A-B-C (operazione motivazionale, stimolo discriminativo, risposta target, risposta problema, conseguenze, livello di aiuto, criterio di padronanza). Un motore comune le applica, registra i dati di ogni occasione e li mostra al terapista. Dettagli in [docs/architettura.md](docs/architettura.md).
+
+## Principi per i prossimi giochi
+
+[docs/principi.md](docs/principi.md) raccoglie le regole cliniche, di game design e tecniche emerse dal primo gioco. Si aggiorna man mano che il codice cresce.
+
+## Crediti e licenze
+
+- Personaggi, kart, blaster, decorazioni: [Kenney](https://kenney.nl) (CC0).
+- Mobili: [KayKit Furniture Bits](https://kaylousberg.itch.io) (CC0), tramite [series-ai/jam-ready-assets](https://github.com/series-ai/jam-ready-assets).
+- [Kart Royale](https://github.com/ryancampbell/kart-royale) di Ryan Campbell (MIT), modificato per la modalità ABA: vedi `giochi/cameretta/kart-royale/LICENSE` e `modifiche-aba.patch`.
+- [Three.js](https://threejs.org) r160 (MIT).
 
 ## Avvertenze
 

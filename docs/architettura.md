@@ -27,12 +27,33 @@ Personalizzazione per il primo caso: personaggio umano (Leo, nome modificabile),
 
 ## La cameretta di Francesco (3D)
 
-Gioco 3D in Three.js. Francesco si muove nella sua cameretta (tocca il pavimento per camminare, tocca un oggetto per interagire). Storia guidata:
+Gioco 3D in Three.js (moduli ES, nessuna compilazione). Francesco, personaggio animato Kenney, si muove in una cameretta arredata con mobili KayKit: tocca il pavimento per camminare, tocca un oggetto o la sua etichetta per interagire. Storia guidata:
 
-1. Francesco torna da scuola; il giocatore lo porta al tablet sulla scrivania.
-2. Francesco gioca a un gioco di kart sul tablet: prima vince (MO), poi perde e la barra della rabbia sale; i segnali del corpo compaiono scritti.
-3. In zona arancione (SD) il giocatore decide cosa fa Francesco: angolo calmo (pausa, risposta target), porta (sbatterla) o tablet (continuare fino a lanciarlo).
-4. Pausa: respirazione guidata, rabbia a zero, +100 XP, Forza +1 (Francesco cresce, mantello da Forza 3), sblocco di karate e pista di macchinine, gioco a scelta.
-5. Porta o tablet: Francesco resta arrabbiato, niente XP né sblocchi (estinzione), poi si riprova.
+1. Francesco entra dalla porta, il giocatore lo porta al tablet sulla scrivania; Francesco lo prende e si siede sul letto.
+2. Sul tablet il giocatore sceglie un gioco vero: **Kart Royale** (corsa, un giro contro sette piloti) o **Blaster Arena** (sparatutto cartoon in prima persona, freccette di gommapiuma su bersagli, sfida a punti contro Max). La regia è nascosta: le prime partite si vincono (impostazione `vittorie`), poi l'avversario diventa più forte e si perde (`sconfitte`). Ogni sconfitta alza la rabbia (gialla, poi arancione) e cambia il viso di Francesco.
+3. In zona gialla il risultato offre "Posa il tablet e fai una pausa" (pausa `anticipata`). In zona arancione (SD) il tablet si chiude, l'inquadratura mostra il viso e i segnali del corpo, poi il giocatore sceglie nel mondo: angolo calmo (pausa), porta (sbatterla) o tablet (continuare a giocare).
+4. Pausa: Francesco si siede in poltrona, respirazione guidata, la rabbia scende respiro dopo respiro; poi +100 XP, Forza +1 e due giochi premio nella stanza: **sacco da boxe** (pugni e calci, la potenza cresce con la Forza) e **gara di kart** vinta.
+5. Porta o tablet: estinzione. Francesco resta arrabbiato, il tablet lanciato si spegne, niente XP né premi; poi si riprova.
 
-Una pausa scelta già in zona gialla è registrata come `anticipata` e rinforzata. Livelli: 1 modeling (Francesco sceglie da solo la pausa), 2 aiuto completo o parziale, 3 senza aiuto con aiuto ritardato, 4 meno vittorie iniziali e pausa più breve.
+Livelli: 1 modeling (Francesco sceglie da solo la pausa), 2 aiuto completo (etichetta che pulsa, freccia, voce) o parziale, 3 senza aiuto con aiuto ritardato, 4 una sola vittoria, una sconfitta in più, un respiro in meno.
+
+Dati: ogni occasione di scelta (tipo, latenza, aiuto, rabbia, partite giocate prima, premio scelto) e ogni partita al tablet (gioco, esito programmato, risultato). Esportazione CSV o "Copia dati".
+
+### File
+
+| File | Ruolo |
+| --- | --- |
+| `index.html` | interfaccia (HUD, tablet, area terapista) e import map |
+| `js/main.js` | storia, contingenze, camera, interazioni |
+| `js/core.js` | configurazione, salvataggio, audio, didascalie, tween |
+| `js/assets.js` | caricamento dei modelli glTF |
+| `js/personaggio.js` | personaggio animato e pose |
+| `js/volto.js` | espressioni del viso e rossore |
+| `js/stanza.js` | cameretta, luci, mobili, premi |
+| `js/tablet.js` | menu dei giochi, partite con regia, risultati |
+| `js/giochi/blaster.js` | Blaster Arena |
+| `js/terapista.js` | area terapista |
+| `kart-royale/` | Kart Royale compilato con la modalità ABA |
+| `strumenti/` | convertitore del personaggio e visualizzatore di modelli |
+
+I principi riutilizzabili sono in [principi.md](principi.md).

@@ -1,0 +1,22 @@
+/**
+ * Modalità ABA (aggiunta per il progetto "Videogiochi ABA").
+ *
+ * Quando la pagina è aperta con `?aba=1`, il gioco:
+ *  - salta i menu e parte subito con la gara;
+ *  - usa il numero di giri passato con `giri=N`;
+ *  - con `esito=vinci` tiene gli avversari dietro al giocatore, con `esito=perdi`
+ *    fa vincere di poco un rivale (la "regia" della gara, vedi AI.ts);
+ *  - quando il giocatore taglia il traguardo avvisa la pagina che lo contiene
+ *    con `postMessage({ sorgente: 'kart-royale', tipo: 'fine', posizione })`.
+ */
+const q = new URLSearchParams(location.search);
+export type Esito = '' | 'vinci' | 'perdi';
+export const ABA = {
+  attivo: q.has('aba'),
+  esito: ((q.get('esito') ?? '') as Esito),
+  giri: Math.max(0, Number(q.get('giri') ?? 0) || 0),
+};
+export function notifica(msg: Record<string, unknown>) {
+  if (!ABA.attivo || window.parent === window) return;
+  window.parent.postMessage({ sorgente: 'kart-royale', ...msg }, '*');
+}

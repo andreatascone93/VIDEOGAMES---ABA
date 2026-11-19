@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><title>Converti personaggio FBX in GLB</title></head>
+<body>
+<p>Strumento di sviluppo: unisce il modello Kenney <code>characterMedium.fbx</code>, una skin e le animazioni in un unico file GLB.</p>
+<script type="importmap">{ "imports": { "three": "../vendor/three/three.module.js", "three/addons/": "../vendor/three/addons/" } }</script>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+const ANIM = ['idle', 'walk', 'run', 'racingIdle', 'racingLeft', 'racingRight', 'interactStanding', 'interactGround', 'punch', 'kick', 'shoot', 'jump', 'crouchIdle'];
+window.converti = async (skin = 'casualMaleA') => {
+  const L = new FBXLoader();
+  const model = await L.loadAsync('../assets/personaggio/characterMedium.fbx');
+  const tex = await new THREE.TextureLoader().loadAsync('../assets/personaggio/skins/' + skin + '.png');
+  tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = true;
+  model.traverse(o => { if (o.isMesh) { o.material = new THREE.MeshStandardMaterial({ map: tex, roughness: .8, metalness: 0 }); o.material.name = 'skin'; } });
+  const clips = [];
+  for (const a of ANIM) { const f = await L.loadAsync('../assets/personaggio/anim/' + a + '.fbx'); const c = f.animations.filter(x => !x.name.includes('Targeting')).sort((x, y) => y.duration - x.duration)[0]; c.name = a; clips.push(c); }
+  const glb = await new GLTFExporter().parseAsync(model, { binary: true, animations: clips, onlyVisible: false });
+  const bytes = new Uint8Array(glb); let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  const box = new THREE.Box3().setFromObject(model);
+  return { b64: btoa(s), size: box.getSize(new THREE.Vector3()).toArray(), clips: clips.map(c => c.name + ':' + c.duration.toFixed(2) + ':' + c.tracks.length) };
+};
+</script></body></html>

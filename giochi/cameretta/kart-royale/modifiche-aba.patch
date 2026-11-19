@@ -1,0 +1,116 @@
+diff --git a/src/game/AI.ts b/src/game/AI.ts
+index afa4cfa..5ef1266 100644
+--- a/src/game/AI.ts
++++ b/src/game/AI.ts
+@@ -23,6 +23,7 @@
+  *  Nothing here allocates after `init`. Every lookup is a typed-array read.
+  * ============================================================================
+  */
++import { ABA } from '../aba';
+ import * as THREE from 'three';
+ import { BASE_TOP_SPEED, ItemKind, Surface, type Ctx, type IKart, type ITrack } from '../types';
+ 
+@@ -1261,6 +1262,7 @@ export class AIField {
+    * over half a lap by the final tour.
+    */
+   beginFrame(karts: readonly IKart[], player: IKart, dt: number) {
++    if (ABA.esito && player) { this.regiaABA(karts, player, dt); return; }
+     // Karts that have taken the flag are excluded from the reference. They keep
+     // circulating for the results-screen backdrop and their `raceDistance` keeps
+     // climbing, so leaving them in meant that the moment the winner crossed the
+@@ -1301,6 +1303,40 @@ export class AIField {
+     }
+   }
+ 
++  /**
++   * Regia ABA. `vinci`: tutti gli avversari restano dietro al giocatore, ma
++   * vicini, così la vittoria sembra combattuta. `perdi`: un rivale (il primo
++   * avversario) resta qualche metro davanti al giocatore e vince di poco; gli
++   * altri corrono normalmente. Le leve sono le stesse del rubber band
++   * originale (velocità bersaglio e spinta longitudinale), solo più forti.
++   */
++  private regiaABA(karts: readonly IKart[], player: IKart, dt: number) {
++    const rival = karts.find(k => !k.isPlayer);
++    const total = Math.max(1, (player as unknown as { raceLength?: number }).raceLength ?? 0);
++    for (const k of karts) {
++      if (k.isPlayer) continue;
++      const gap = k.raceDistance - player.raceDistance; // > 0: avversario davanti
++      let band = 1, assist = 0;
++      if (ABA.esito === 'vinci') {
++        // resta tra 6 e 25 metri dietro al giocatore
++        if (gap > -8) { band = 0.7; assist = -6 * clamp((gap + 8) / 8, 0.3, 1); }
++        else if (gap < -30) { band = 1.04; assist = 0.8; }
++      } else if (k === rival) {
++        // davanti di 5-12 metri: abbastanza vicino da sembrare battibile
++        const want = 8 + 4 * Math.sin(player.raceDistance / 60);
++        if (gap < want) { band = 1.1; assist = 3.6 * clamp((want - gap) / 12, 0.25, 1); }
++        else if (gap > want + 14) { band = 0.9; assist = -1.6; }
++      } else {
++        if (gap > 30) { band = 0.95; assist = -0.6; }
++      }
++      void total;
++      const prev = this.bands.get(k.id) ?? 1;
++      this.bands.set(k.id, prev + clamp(band - prev, -dt * 0.6, dt * 0.6));
++      const pa = this.assists.get(k.id) ?? 0;
++      this.assists.set(k.id, pa + clamp(assist - pa, -dt * 3, dt * 3));
++    }
++  }
++
+   /** Longitudinal assist for this kart, m/s^2. Race applies it as an impulse. */
+   assistFor(k: IKart): number {
+     return this.assists.get(k.id) ?? 0;
+diff --git a/src/game/Race.ts b/src/game/Race.ts
+index 1838bd1..a67b357 100644
+--- a/src/game/Race.ts
++++ b/src/game/Race.ts
+@@ -36,6 +36,7 @@ import {
+ import { Kart } from '../kart/Kart';
+ import { AIField, type DriveCmd } from './AI';
+ import { Items } from './Items';
++import { ABA } from '../aba';
+ 
+ const ROSTER: KartStats[] = [
+   { name: 'Vela',   color: new THREE.Color(0xff3b5c), accelMul: 1.00, topSpeedMul: 1.00, weightMul: 1.0,  handlingMul: 1.00 },
+@@ -149,7 +150,7 @@ export class Race implements IRace {
+ 
+   karts: Kart[] = [];
+   player!: Kart;
+-  totalLaps = LAP_COUNT;
++  totalLaps = ABA.giri || LAP_COUNT;
+   raceTime = 0;
+   countdown = 3;
+   lapTimes: number[] = [];
+diff --git a/src/main.ts b/src/main.ts
+index af30423..f3f58be 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -1,3 +1,4 @@
++import { ABA, notifica } from './aba';
+ import * as THREE from 'three';
+ import { RaceState, type Ctx, type System } from './types';
+ import { Bus } from './core/Bus';
+@@ -191,6 +192,12 @@ async function boot() {
+   // straight into a countdown skipped the entire front end — it dated from the
+   // original scaffold, written before there was a front end to skip.
+   bootProgress(1, 'ready');
++  if (ABA.attivo) {
++    ctx.bus.on((e) => { if (e.type === 'finish' && e.kart.isPlayer) notifica({ tipo: 'fine', posizione: e.place, esito: ABA.esito }); });
++    ctx.race.selectKart(0);
++    ctx.race.reset();
++    notifica({ tipo: 'pronto' });
++  }
+ 
+   // Press R to record. Deliberately not a System: it owns no scene state and
+   // must keep working while the game is paused or on a menu.
+diff --git a/vite.config.ts b/vite.config.ts
+index 13ffbf4..6a6a9f3 100644
+--- a/vite.config.ts
++++ b/vite.config.ts
+@@ -2,5 +2,6 @@ import { defineConfig } from 'vite';
+ 
+ export default defineConfig({
+   server: { port: 5173, strictPort: true, host: true },
+-  build: { target: 'es2022', sourcemap: true },
++  base: './',
++  build: { target: 'es2022', sourcemap: false },
+ });
