@@ -71,13 +71,16 @@ Per un ragazzo di 9 anni: aspetto da videogioco vero (3D, movimento libero, HUD 
 
 ### 2.2 Storia guidata con movimento libero
 Il giocatore cammina dove vuole, ma la storia avanza solo con le interazioni chiave. Un obiettivo è sempre scritto in alto, e la didascalia (letta anche a voce) dice cosa succede.
+La casa è un solo spazio: da una stanza all'altra si passa camminando, dalla porta, in ogni momento in cui il personaggio è libero. Niente dissolvenze e niente teletrasporti: la continuità del luogo è parte del realismo. La porta è sempre una scelta, e si può anche toccare il pavimento dell'altra stanza. Le scelte offerte dipendono da due cose insieme, il momento della storia e la stanza in cui si trova il personaggio; quando la storia chiede una decisione (rabbia alta, tablet posato) le alternative restano le stesse in ogni stanza, così girare per casa non diventa un modo per evitare la scelta.
+*Dove:* `fase`, `etichette`, `entrato`, `vaiNellAltraStanza` in `main.js`.
 
 ### 2.3 La regia deve essere credibile
 L'avversario resta vicino: perde di poco nelle partite facili e vince di poco in quelle difficili. Ogni tanto sbaglia un colpo anche quando "vuole" vincere. Mai sconfitte umilianti. Nel kart il rivale arriva primo con pochi metri di vantaggio; nel blaster Max chiude con 2–4 punti di margine.
 
 ### 2.4 Il mondo reagisce
 Le azioni hanno effetti che restano e che coinvolgono altre persone: la porta sbattuta fa arrivare il papà, il tablet lanciato ha lo schermo crepato, il disegno finito resta appeso al muro, la mamma risponde in modo diverso a quello che le si dice. Un mondo che reagisce rende credibili le conseguenze, e le conseguenze credibili sono quelle che si ritrovano a casa.
-*Dove:* `visita`, `rompiTablet`, `room.carta` (disegno al muro), `battute` in `attivita.js`.
+Chi reagisce arriva da dove si trovava: la mamma si alza dal divano del salone, il papà entra dal corridoio, tutti e due attraversano la porta camminando, e dopo tornano al loro posto. Mentre arrivano, l'inquadratura si allarga sulla casa: il giocatore vede che il rumore si è sentito anche di là.
+*Dove:* `visita`, `arriva`, `rientra`, `rompiTablet`, `room.carta` (disegno al muro), `battute` in `attivita.js`.
 
 ### 2.5 Le attività alternative sono piccoli giochi veri
 Disegnare, costruire una torre a turno, parlare scegliendo le frasi: ogni alternativa si gioca davvero e dura abbastanza da assorbire. Un'animazione da guardare non compete con il tablet; un'attività in cui si fa qualcosa sì. La barra della rabbia scende più in fretta quando il giocatore partecipa (per esempio mentre disegna) che quando aspetta.
@@ -98,6 +101,10 @@ Narrazione vocale (italiano), didascalie grandi, fumetti con il nome di chi parl
 ### 2.10 Requisiti per integrare un gioco esterno
 Licenza compatibile (MIT o CC0), funziona offline, ha comandi touch, permette di controllare l'esito (agganci all'intelligenza artificiale degli avversari), può segnalare alla pagina che lo contiene inizio, fine e andamento della partita.
 
+### 2.11 Tutti i giochi interni allo stesso livello grafico
+Un gioco dentro il gioco vale quanto il più curato tra quelli accanto: se uno sembra un videogioco vero e l'altro una prova tecnica, il secondo smette di essere rinforzante e la regia non è più credibile. Prima di aggiungere un gioco interno lo si confronta, schermata accanto a schermata, con il migliore già presente. Lista di controllo: un cielo e un orizzonte (mai uno sfondo a tinta unita); un terreno con texture e variazioni di colore; una luce con una direzione, calda da una parte e fredda dall'altra, con ombre; vita nella scena (pubblico, bandiere, palloncini, polvere); un effetto per ogni evento importante (scoppio, anello, lampo, tabellone che si aggiorna); un'interfaccia da trasmissione sportiva, con nomi, punteggio e tempo. Vale anche per gli oggetti della stanza che fanno da gioco, come il sacco da boxe: materiali veri, struttura credibile, un effetto a ogni colpo.
+*Dove:* `js/giochi/arena.js`, `js/giochi/blaster.js`, il sacco in `stanza.js` (`saccoColpo`).
+
 ---
 
 ## 3. Principi tecnici
@@ -117,7 +124,8 @@ Pagina web senza passaggi di compilazione per il gioco principale: `index.html` 
 | `terapista.js` | impostazioni, grafico, tabella, esportazione | sì, cambiando i campi |
 | `tablet.js` | dispositivo nel gioco con partite vere, regia ed eventi in tempo reale | sì, per scenari con schermi |
 | `attivita.js` | attività alternative (musica, disegno, dialogo, costruzioni) | in parte: lo schema `calma(k)` sì |
-| `stanza.js`, `salone.js`, `main.js` | scene e storia di questo scenario | no, sono specifici |
+| `giochi/arena.js` | scenario all'aperto per i giochi interni: cielo, terreno, luci, pubblico, tabellone, effetti | sì, cambiando colori e oggetti |
+| `stanza.js`, `salone.js`, `main.js` | scene e storia di questo scenario | no, sono specifici (riusabili `pareteConPorta`, `porta`, `finestra`) |
 
 ### 3.3 Pipeline del personaggio
 Kenney Animated Characters (CC0): modello FBX più animazioni FBX separate, convertiti nel browser in un solo GLB con GLTFExporter (`strumenti/converti-personaggio.html`). Di ogni FBX si prende la clip più lunga, escludendo "Targeting Pose". Le skin sono PNG scambiabili al volo.
@@ -143,29 +151,35 @@ Ogni gioco del tablet racconta cosa succede con `onEvento`: `via`, `tempo` (avan
 ### 3.9 Giochi esterni dentro il gioco
 Kart Royale (MIT) è compilato con Vite (`base: './'`) e modificato con parametri `?aba=1&esito=vinci|perdi&giri=N`. L'elastico degli avversari è in `AI.ts`. Il gioco comunica con `postMessage({ sorgente: 'kart-royale', tipo: 'pronto' | 'stato' | 'fine', posizione, progresso })`: `stato` parte ogni mezzo secondo durante la gara. Se i messaggi di stato non arrivano, l'avanzamento si stima dal tempo trascorso, così la rabbia si muove comunque. Le modifiche stanno in `kart-royale/modifiche-aba.patch` e `aba.ts.txt`, da riapplicare se il progetto originale si aggiorna.
 
-### 3.10 Più stanze
-Ogni stanza è un gruppo che si accende e si spegne; si cambia stanza con una dissolvenza a nero. Ogni stanza ha la sua mappa: limiti, ostacoli, punto d'ingresso, pavimento per il tocco. Le luci di una stanza spenta si spengono con il gruppo.
-*Dove:* `MAPPA`, `mostraStanza`, `cambiaStanza` in `main.js`.
+### 3.10 Una casa continua: stanze affiancate, coordinate locali
+Le stanze sono gruppi messi uno accanto all'altro nel mondo e sempre visibili. Ogni stanza ha la sua mappa (limiti, ostacoli, punti di passaggio, pavimento per il tocco) scritta nelle coordinate della stanza, come se fosse l'unica. Ogni personaggio è figlio del gruppo della stanza in cui si trova: luoghi, ostacoli, attività e pose non sanno dove la stanza è appoggiata nel mondo, e aggiungere una stanza non costringe a riscriverli. Sulla soglia il personaggio cambia genitore nello stesso punto del mondo e riceve le nuove coordinate locali; solo la camera, le inquadrature fisse e i tocchi sul pavimento sommano l'origine della stanza.
+Le pareti in comune hanno un vano vero (tre pezzi: prima, dopo, architrave) con le coordinate della texture calcolate sulla parete intera, così la carta da parati non si interrompe. L'anta è una sola per porta. Il percorso sulla soglia passa tra l'anta aperta e lo stipite, e il punto in cui il personaggio aspetta che la porta si apra sta fuori dal raggio dell'anta. Un solo sole illumina tutta la casa, con una mappa delle ombre che copre le stanze affiancate; le luci puntiformi senza ombre passano i muri, quindi vanno tenute deboli e lontane dalle pareti in comune.
+Una funzione rimette la casa in ordine (tutti al loro posto, porte chiuse) e incrementa un contatore: le animazioni non attese, come il genitore che torna al divano, lo controllano e si fermano se nel frattempo la casa è stata riordinata.
+*Dove:* `ORIG`, `metti`, `MAPPA`, `SOGLIA`, `attraversa`, `mostraStanza`, `giro` in `main.js`; `pareteConPorta` in `stanza.js`; `SALONE_X` in `salone.js`.
 
 ### 3.11 Etichette nel mondo
-Le scelte sono etichette ancorate a punti della scena. Lo stesso punto può portarne più di una (sul tablet: "Continua a giocare" e "Lancia il tablet"): si impilano in righe. Le etichette si creano quando servono e si tolgono subito dopo la scelta. Adeguate e problema hanno lo stesso aspetto: il colore non deve suggerire la risposta.
-*Dove:* `PUNTI`, `setAttivi` in `main.js`.
+Le scelte sono etichette ancorate a punti della scena. Lo stesso punto può portarne più di una (sul tablet: "Continua a giocare" e "Lancia il tablet"): si impilano in righe. Le etichette si creano quando servono e si tolgono subito dopo la scelta. Adeguate e problema hanno lo stesso aspetto: il colore non deve suggerire la risposta. Le etichette sono funzione del momento della storia e della stanza: una sola funzione le ricostruisce ogni volta che il personaggio entra in una stanza o la storia cambia momento, invece di tante liste scritte a mano nei vari punti della storia.
+*Dove:* `PUNTI`, `setAttivi`, `etichette` in `main.js`.
 
 ### 3.12 Altre persone
 Mamma, papà e bambini sono lo stesso modello animato con un'altra skin e un'altra statura; i capelli sono forme semplici agganciate all'osso della testa. Chi parla ha un fumetto con il nome, che segue la testa. Chi aspetta un genitore si mette fuori dal suo percorso, altrimenti i personaggi si attraversano.
 *Dove:* `js/persone.js`, `ATTESA` e `visita` in `main.js`.
 
 ### 3.13 Prestazioni su tablet
-Mentre gira un gioco del tablet, la stanza si ridisegna un fotogramma su tre. Pixel ratio massimo 1,75. Ombre 2048 nella stanza e 1024 nell'arena. Il secondo contesto WebGL si distrugge all'uscita.
+Mentre gira un gioco del tablet, la casa si ridisegna un fotogramma su tre. Pixel ratio massimo 1,75. Una sola mappa delle ombre 4096×2048 per tutta la casa, 2048 nell'arena. Il secondo contesto WebGL si distrugge all'uscita. La grafica ricca si ottiene senza post-produzione: bagliori fatti con sprite additivi al posto del bloom, pubblico in un'unica `InstancedMesh`, particelle prese da una riserva già allocata, nebbia e cielo in uno shader semplice. Si misura sempre con `renderer.info`: la casa intera sta sotto le 100 chiamate di disegno, l'arena poco sopra.
 
 ### 3.14 Inquadrature
-`camera.setViewOffset` sposta il personaggio nella striscia libera accanto al tablet senza cambiare prospettiva. Ogni momento della storia ha la sua inquadratura: stanza, scelta (fissa, tutte le opzioni in vista), salone, viso, tablet, pausa, sacco, più inquadrature fisse per le attività.
+`camera.setViewOffset` sposta il personaggio nella striscia libera accanto al tablet senza cambiare prospettiva. Ogni momento della storia ha la sua inquadratura: stanza (inquadra la stanza in cui si trova il personaggio, scorre da una all'altra quando passa la porta e, vicino alla porta, si sposta verso la stanza accanto per mostrare dove si sta andando), scelta (fissa, tutte le opzioni in vista), viso, tablet, pausa, sacco, più inquadrature fisse per le attività e una larga sulla casa quando arriva un genitore.
 
 ### 3.15 Test automatici
-Playwright con swiftshader. Gli elementi che pulsano non sono mai "stabili": si usa `dispatchEvent('pointerdown')`. Si aspetta la schermata attiva, non l'esistenza di un pulsante: i pulsanti della schermata precedente restano nella pagina. In modalità `?debug` la camera si può fissare all'istante e `window.__app` espone lo stato. Il kart si sostituisce con una pagina finta che manda gli stessi messaggi (`route` più `postMessage`), perché il rendering software è troppo lento per guidare davvero; la regia del kart si verifica facendo avanzare la simulazione con `race.update(ctx, 1/60)`.
+Playwright con swiftshader. Gli elementi che pulsano non sono mai "stabili": si usa `dispatchEvent('pointerdown')`. Si aspetta la schermata attiva, non l'esistenza di un pulsante: i pulsanti della schermata precedente restano nella pagina. In modalità `?debug` la camera si può fissare all'istante e `window.__app` espone lo stato. Per i passaggi di stanza si aspetta `luogo` (dove si trova il protagonista) e la proprietà `stanza` degli altri personaggi. Il kart si sostituisce con una pagina finta che manda gli stessi messaggi (`route` più `postMessage`), perché il rendering software è troppo lento per guidare davvero; la regia del kart si verifica facendo avanzare la simulazione con `race.update(ctx, 1/60)`.
 
 ### 3.16 Pubblicazione
 L'anteprima su claude.ai accetta solo alcuni tipi di file (html, js, css, json, png, jpg, txt): niente `.glb`, `.gltf` o `.bin`. `strumenti/prepara-anteprima.py` crea una copia con i modelli convertiti in glTF `.json` con i dati incorporati; `assets.js` li carica se `index.html` ha `data-modelli="json"`. L'anteprima blocca anche i download: per i dati serve il pulsante "Copia dati". Il salvataggio locale vale solo per quel dispositivo e quel browser.
 
 ### 3.17 Licenze e crediti
 Grafica: Kenney (Animated Characters, Furniture Kit) e KayKit (CC0). Kart Royale: MIT. Three.js: MIT. I file di licenza restano accanto agli asset.
+
+### 3.18 Uno scenario condiviso per i giochi interni
+Cielo, terreno, luci, pubblico ed effetti stanno in un modulo a parte che restituisce poche funzioni (`punteggio`, `scoppio`, `anello`, `lampo`, `scia`, `esulta`, `aggiorna`): il gioco pensa alle regole, lo scenario alla resa. Un nuovo gioco interno riusa lo stesso scenario cambiando colori e oggetti. Tre lezioni dai modelli scaricati: il perno può stare in un angolo, quindi prima di ruotare un modello lo si ricentra sulla sua scatola; i posti del pubblico si trovano con raggi lanciati dall'alto sulla geometria vera, non indovinando le file dalle misure; le forme di rivoluzione (la capsula del sacco) distribuiscono la texture per numero di punti e non per altezza, quindi la coordinata verticale va ricalcolata dalla posizione.
+*Dove:* `js/giochi/arena.js` (`costruisciArena`, `metti` con `centra`), `geoSacco` in `stanza.js`.

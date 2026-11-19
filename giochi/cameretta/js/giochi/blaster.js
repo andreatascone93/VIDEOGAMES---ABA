@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { model } from '../assets.js';
 import { Personaggio } from '../personaggio.js';
 import { tone, noise, sleep } from '../core.js';
+import { costruisciArena } from './arena.js';
 
 const AREA = { x0: -3.5, x1: 3.5, z0: -.5, z1: 2.2 };   // dove può muoversi il giocatore
 const OCCHI = 1.25;                                      // altezza degli occhi (un ragazzo di 9 anni)
@@ -19,16 +20,20 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
   // ---------------------------------------------------------------- DOM
   box.innerHTML = `
   <canvas class="bl-c" style="position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none"></canvas>
-  <div class="bl-hud" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;background:rgba(10,14,26,.78);padding:8px 18px;border-radius:14px;font-weight:900;font-size:clamp(16px,2.2vw,24px);pointer-events:none;white-space:nowrap">
-    <span style="color:#ffc94a">${nome.toUpperCase()}</span><span class="bl-p" style="font-size:1.3em;min-width:1.4em;text-align:center">0</span>
-    <span style="opacity:.5">–</span>
-    <span class="bl-m" style="font-size:1.3em;min-width:1.4em;text-align:center">0</span><span style="color:#ff7a7a">MAX</span>
+  <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 46%,rgba(0,0,0,0) 54%,rgba(30,10,40,.4) 100%)"></div>
+  <div class="bl-hud" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:stretch;pointer-events:none;white-space:nowrap;font-weight:900;filter:drop-shadow(0 6px 12px rgba(0,0,0,.4))">
+    <div style="display:flex;align-items:center;gap:12px;padding:7px 18px 7px 20px;background:linear-gradient(180deg,#ffdc6e,#f2a52c);color:#1a2138;border-radius:14px 0 0 14px;transform:skewX(-10deg)">
+      <span style="transform:skewX(10deg);font-size:clamp(12px,1.6vw,18px);letter-spacing:.07em">${nome.toUpperCase()}</span><span class="bl-p" style="display:inline-block;transform:skewX(10deg);font-size:clamp(24px,3.4vw,40px);min-width:1.25em;text-align:center;font-variant-numeric:tabular-nums">0</span></div>
+    <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4px 16px;background:rgba(12,16,30,.92);color:#fff;transform:skewX(-10deg);min-width:88px;border-top:2px solid rgba(255,255,255,.16)">
+      <span class="bl-s" style="display:inline-block;transform:skewX(10deg);font-size:clamp(16px,2.2vw,25px);font-variant-numeric:tabular-nums">0:${String(Math.ceil(durata)).padStart(2, '0')}</span>
+      <span style="transform:skewX(10deg);display:block;width:76px;height:5px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden;margin-top:3px"><span class="bl-t" style="display:block;height:100%;width:100%;background:#ffc94a"></span></span></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:7px 20px 7px 18px;background:linear-gradient(180deg,#ff8572,#d43a2a);color:#fff;border-radius:0 14px 14px 0;transform:skewX(-10deg)">
+      <span class="bl-m" style="display:inline-block;transform:skewX(10deg);font-size:clamp(24px,3.4vw,40px);min-width:1.25em;text-align:center;font-variant-numeric:tabular-nums">0</span><span style="transform:skewX(10deg);font-size:clamp(12px,1.6vw,18px);letter-spacing:.07em">MAX</span></div>
   </div>
-  <div style="position:absolute;top:62px;left:50%;transform:translateX(-50%);width:min(320px,40%);height:8px;border-radius:5px;background:rgba(255,255,255,.18);overflow:hidden;pointer-events:none"><div class="bl-t" style="height:100%;width:100%;background:#ffc94a"></div></div>
-  <div class="bl-joy" style="position:absolute;left:28px;bottom:28px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);pointer-events:none">
-    <div class="bl-knob" style="position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.55)"></div></div>
-  <div class="bl-msg" style="position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-size:clamp(28px,5vw,56px);font-weight:900;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.4);pointer-events:none;text-align:center"></div>
-  <div class="bl-help" style="position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(10,14,26,.78);padding:8px 16px;border-radius:12px;font-weight:700;font-size:clamp(13px,1.7vw,17px);pointer-events:none;text-align:center">Tocca i bersagli per colpirli · trascina per guardarti intorno · joystick per muoverti</div>
+  <div class="bl-joy" style="position:absolute;left:28px;bottom:28px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.05) 40%,rgba(255,255,255,.2) 100%);border:2px solid rgba(255,255,255,.45);pointer-events:none">
+    <div class="bl-knob" style="position:absolute;left:40px;top:40px;width:50px;height:50px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#c9d2ea);box-shadow:0 4px 10px rgba(0,0,0,.35)"></div></div>
+  <div class="bl-msg" style="position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-size:clamp(46px,9vw,110px);font-weight:900;font-style:italic;color:#fff;text-shadow:0 5px 0 rgba(20,26,48,.75),0 0 34px rgba(255,200,90,.65);pointer-events:none;text-align:center"></div>
+  <div class="bl-help" style="position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(12,16,30,.82);border:1px solid rgba(255,255,255,.14);padding:8px 16px;border-radius:999px;font-weight:700;font-size:clamp(12px,1.6vw,16px);pointer-events:none;text-align:center">Tocca i bersagli per colpirli · trascina per guardarti intorno · joystick per muoverti</div>
   <div class="bl-fx" style="position:absolute;inset:0;pointer-events:none;overflow:hidden"></div>`;
   const $ = s => box.querySelector(s);
   const cv = $('.bl-c');
@@ -37,37 +42,18 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
   const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
   const scene = new THREE.Scene();
-  scene.background = canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#5aa9ef'); gr.addColorStop(.55, '#a9d8ff'); gr.addColorStop(1, '#e8f6ff'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
-  scene.background.wrapS = scene.background.wrapT = THREE.ClampToEdgeWrapping; scene.background.repeat.set(1, 1);
-  scene.fog = new THREE.Fog(0xcfe9ff, 30, 70);
   const camera = new THREE.PerspectiveCamera(62, 1, .05, 120);
   const resize = () => { const w = box.clientWidth || 800, h = box.clientHeight || 600; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); };
   resize(); const ro = new ResizeObserver(resize); ro.observe(box);
 
-  scene.add(new THREE.HemisphereLight(0xdff1ff, 0x6a8a4a, 1.6));
-  const sun = new THREE.DirectionalLight(0xfff4e0, 2.4); sun.position.set(8, 14, 6); sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, { left: -16, right: 16, top: 16, bottom: -16, near: 1, far: 40 }); sun.shadow.normalBias = .03; scene.add(sun);
 
-  // terreno: prato a strisce + pista centrale
-  const prato = canvasTex(256, 256, (g, w, h) => { for (let i = 0; i < 8; i++) { g.fillStyle = i % 2 ? '#7cc95a' : '#86d363'; g.fillRect(0, i * h / 8, w, h / 8); } for (let i = 0; i < 400; i++) { g.fillStyle = 'rgba(40,90,30,.12)'; g.fillRect(Math.random() * w, Math.random() * h, 2, 5); } }, [10, 10]);
-  const terreno = new THREE.Mesh(new THREE.PlaneGeometry(90, 90), new THREE.MeshStandardMaterial({ map: prato, roughness: 1 }));
-  terreno.rotation.x = -Math.PI / 2; terreno.receiveShadow = true; scene.add(terreno);
-  const pedana = new THREE.Mesh(new THREE.BoxGeometry(8.4, .08, 3.6), new THREE.MeshStandardMaterial({ color: 0x3b4a66, roughness: .8 }));
-  pedana.position.set(0, .04, .85); pedana.receiveShadow = true; scene.add(pedana);
-  const riga = new THREE.Mesh(new THREE.BoxGeometry(8.4, .09, .12), new THREE.MeshStandardMaterial({ color: 0xffc94a })); riga.position.set(0, .045, -.95); scene.add(riga);
-
-  // decorazioni (Kenney Racing/Blaster Kit, CC0)
+  // arena (cielo, colline, campo, tribune, tabellone: js/giochi/arena.js) e casse Kenney Blaster Kit (CC0)
   const piazza = async (file, x, z, { s = 1, ry = 0, y = 0, misura = null } = {}) => { const o = await model(file); if (misura) normalizza(o, misura); else o.scale.multiplyScalar(s); o.position.set(x, y, z); o.rotation.y = ry; scene.add(o); return o; };
   const cover = [];
+  const A = await costruisciArena({ scene, camera, renderer, piazza, nome });
+  const terreno = A.terreno;
   await Promise.all([
-    ...[[-9, -18], [-3, -21], [5, -20], [11, -17], [-14, -10], [15, -9], [-16, -2], [17, -1], [-12, 6], [13, 6]].map(([x, z], i) => piazza('pista/' + (i % 2 ? 'treeLarge' : 'treeSmall') + '.glb', x, z, { misura: i % 2 ? 6 : 4, ry: i })),
-    piazza('pista/grandStand.glb', -10.5, -12, { misura: 7, ry: .9 }),
-    piazza('pista/billboard.glb', 6.5, -22, { misura: 7, ry: -.15 }),
-    piazza('pista/tent.glb', 12, -12, { misura: 4.5, ry: -.8 }),
-    piazza('pista/flagCheckers.glb', -4.6, -1.4, { misura: 2.6 }), piazza('pista/flagRed.glb', 4.4, -1.4, { misura: 2.6 }),
-    ...[-6, -3, 0, 3, 6].map(x => piazza('pista/fenceStraight.glb', x - 1.5, -24, { misura: 3 })),
     ...[[-5.5, -7, 'crate-wide', 1.8], [-1.6, -9.5, 'crate-medium', 1.3], [2.8, -6.5, 'crate-small', 1.0], [5.6, -10, 'crate-wide', 1.8], [-3.6, -12.5, 'crate-medium', 1.3], [1.2, -13.5, 'crate-wide', 1.8], [7.2, -5, 'crate-small', 1.0], [-7.6, -11, 'crate-small', 1.0]]
       .map(([x, z, f, m]) => piazza('blaster/' + f + '.glb', x, z, { misura: m, ry: x * .3 }).then(o => cover.push(o)))
   ]);
@@ -118,10 +104,12 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
     el.style.cssText = `position:absolute;left:${(v.x + 1) / 2 * 100}%;top:${(1 - v.y) / 2 * 100}%;transform:translate(-50%,-50%);font-weight:900;font-size:30px;color:${colore};text-shadow:0 3px 0 rgba(0,0,0,.45)`;
     fx.appendChild(el); el.animate([{ transform: 'translate(-50%,-50%) scale(.6)', opacity: 1 }, { transform: 'translate(-50%,-160%) scale(1.15)', opacity: 0 }], { duration: 900, easing: 'ease-out' }); setTimeout(() => el.remove(), 900);
   }
-  function aggiornaHud() { $('.bl-p').textContent = punti; $('.bl-m').textContent = puntiMax; }
+  let secMostrati = -1;
+  const salto = e => e.animate([{ transform: 'skewX(10deg) scale(1.6)' }, { transform: 'skewX(10deg) scale(1)' }], { duration: 280, easing: 'ease-out' });
+  function aggiornaHud() { const a = $('.bl-p'), b = $('.bl-m'); if (a.textContent !== String(punti)) { a.textContent = punti; salto(a); } if (b.textContent !== String(puntiMax)) { b.textContent = puntiMax; salto(b); } }
 
   function spara(da, a, chi, bersaglio) {
-    const d = tplDardo.clone(true); d.position.copy(da); d.lookAt(a); scene.add(d);
+    const d = new THREE.Group(); d.add(tplDardo.clone(true), A.scia(chi)); d.position.copy(da); d.lookAt(a); scene.add(d);
     const dist = da.distanceTo(a);
     dardi.push({ d, da: da.clone(), a: a.clone(), t: 0, durata: dist / (chi === 'io' ? 34 : 30), chi, bersaglio });
     if (chi === 'io') { tone(900, .05, 'square', .04); noise(.06, .12, 2500); } else tone(700, .04, 'square', .02);
@@ -131,6 +119,7 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
     b.colpito = true; b.giu = 0;
     if (chi === 'io') { punti++; tone(880, .08, 'triangle', .09); tone(1320, .12, 'triangle', .07, .07); popup('+1', b.t.getWorldPosition(w), '#ffc94a'); }
     else { puntiMax++; tone(330, .1, 'triangle', .06); popup('+1 MAX', b.t.getWorldPosition(w), '#ff7a7a'); }
+    { const pos = b.t.getWorldPosition(w); A.scoppio(pos, chi === 'io' ? ['#ffd45a', '#ffffff', '#ff9a3c', '#7fe0d4'] : ['#ff6a5a', '#ffffff', '#b04ad8']); A.anello(pos, chi === 'io' ? 0xffd45a : 0xff6a5a); A.punteggio(punti, puntiMax); if (chi === 'io') A.esulta(); }
     aggiornaHud(); onEvento({ tipo: 'punto', chi: chi === 'io' ? 'io' : 'rivale', punti, puntiRivale: puntiMax }); return true;
   }
 
@@ -215,7 +204,7 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
     const altri = ray.intersectObjects([terreno, ...cover], true)[0];
     const punto = hit ? hit.point : altri ? altri.point : ray.ray.at(30, new THREE.Vector3());
     let b = null; if (hit) b = vivi.find(x => { let o = hit.object; while (o) { if (o === x.t) return true; o = o.parent; } return false; });
-    armaG.position.z = -.45; armaG.rotation.x = .18;
+    armaG.position.z = -.45; armaG.rotation.x = .18; A.lampo();
     const muso = new THREE.Vector3(.26, -.2, -.95); camera.localToWorld(muso);
     spara(muso, punto, 'io', b);
     // segno di mira
@@ -266,11 +255,12 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
     max.update(dt);
     if (inCorso) {
       tempo -= dt; $('.bl-t').style.width = Math.max(0, tempo / durata * 100) + '%';
+      { const s = Math.max(0, Math.ceil(tempo)); if (s !== secMostrati) { secMostrati = s; const e = $('.bl-s'); e.textContent = '0:' + String(s).padStart(2, '0'); if (s <= 5) { e.style.color = '#ff8f7a'; e.animate([{ transform: 'skewX(10deg) scale(1.35)' }, { transform: 'skewX(10deg) scale(1)' }], { duration: 300 }); } } }
       tic -= dt; if (tic <= 0) { tic = .25; onEvento({ tipo: 'tempo', progresso: Math.min(1, 1 - tempo / durata) }); }
       spawn(dt); aggiornaMax(dt);
       if (tempo <= 0) termina();
     }
-    aggiornaBersagli(dt); aggiornaDardi(dt);
+    aggiornaBersagli(dt); aggiornaDardi(dt); A.aggiorna(dt);
     renderer.render(scene, camera);
   }
   raf = requestAnimationFrame(frame);
@@ -285,9 +275,10 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
   }
   (async () => {
     const msg = $('.bl-msg');
-    for (const t of ['3', '2', '1']) { if (fine) return; msg.textContent = t; tone(440, .12, 'triangle', .07); await sleep(700); }
+    const batti = () => msg.animate([{ transform: 'translate(-50%,-50%) scale(1.9)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 }], { duration: 280, easing: 'cubic-bezier(.2,1.5,.4,1)' });
+    for (const t of ['3', '2', '1']) { if (fine) return; msg.textContent = t; batti(); tone(440, .12, 'triangle', .07); await sleep(700); }
     if (fine) return;
-    msg.textContent = 'VIA!'; tone(880, .25, 'triangle', .08); inCorso = true; onEvento({ tipo: 'via' });
+    msg.textContent = 'VIA!'; msg.style.color = '#ffd45a'; batti(); tone(880, .25, 'triangle', .08); inCorso = true; onEvento({ tipo: 'via' });
     await sleep(600); msg.textContent = '';
     setTimeout(() => { const h = $('.bl-help'); if (h) h.style.display = 'none'; }, 5000);
   })();
@@ -300,6 +291,6 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
     },
     // per i test automatici
     _stato: () => ({ punti, puntiMax, tempo, attivi: bersagli.filter(b => b.attivo).length }),
-    _sparaA: sparaA, _camera: camera, _bersagli: bersagli
+    _sparaA: sparaA, _camera: camera, _bersagli: bersagli, _renderer: renderer, _scene: scene
   };
 }

@@ -47,6 +47,20 @@ export function finestra(parent, x, y, z, mat) {
   return win;
 }
 // porta con cardine: restituisce il perno da ruotare
+// parete lungo z con il vano di una porta: tre pezzi, con la carta da parati che continua da un pezzo all'altro
+export function pareteConPorta(parent, m, xc, z0, z1, h, p0, p1, hp = 2.1) {
+  const D = z1 - z0, pezzi = [];
+  const pezzo = (a, b, y0, y1) => {
+    const geo = new THREE.BoxGeometry(.15, y1 - y0, b - a), uv = geo.attributes.uv;
+    for (let i = 0; i < 8; i++) {   // facce +x (0-3) e -x (4-7): le coordinate della texture restano quelle della parete intera
+      const px = i < 4, zu = px ? b - uv.getX(i) * (b - a) : a + uv.getX(i) * (b - a);
+      uv.setXY(i, px ? (z1 - zu) / D : (zu - z0) / D, (y0 + uv.getY(i) * (y1 - y0)) / h);
+    }
+    const o = new THREE.Mesh(geo, m); o.position.set(xc, (y0 + y1) / 2, (a + b) / 2); o.castShadow = o.receiveShadow = true; parent.add(o); pezzi.push(o);
+  };
+  pezzo(z0, p0, 0, h); pezzo(p1, z1, 0, h); pezzo(p0, p1, hp, h);
+  return pezzi;
+}
 export function porta(parent, x, z, mat, { lato = 1 } = {}) {
   const pivot = new THREE.Group(); pivot.position.set(x - .02 * lato, 0, z); parent.add(pivot);
   const box = (w, h, d, m, px, py, pz, p = pivot) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(px, py, pz); o.castShadow = o.receiveShadow = true; p.add(o); return o; };
@@ -69,16 +83,17 @@ export async function costruisciStanza(scene) {
   const pareteM = mat({ map: parete('#e9eef5', '#dfe7f0') }), pareteL = mat({ map: parete('#dbe9e1', '#d0e2d7') });
   box(R.x1 - R.x0 + .3, R.h, .15, pareteM, 0, R.h / 2, R.z0 - .075);
   box(.15, R.h, R.z1 - R.z0, pareteL, R.x0 - .075, R.h / 2, 0);
-  box(.15, R.h, R.z1 - R.z0, pareteL, R.x1 + .075, R.h / 2, 0);
+  const muroPorta = pareteConPorta(g, pareteL, R.x1 + .075, R.z0, R.z1, R.h, .11, 1.09);   // oltre questa parete c'è il salone
+  box(.3, .02, .98, mat({ color: 0x9a6f48, roughness: .7 }), R.x1 + .15, -.01, .6);          // soglia
   const zoccolo = mat({ color: 0xffffff });
-  box(R.x1 - R.x0, .1, .03, zoccolo, 0, .05, R.z0 + .015); box(.03, .1, R.z1 - R.z0, zoccolo, R.x0 + .015, .05, 0); box(.03, .1, R.z1 - R.z0, zoccolo, R.x1 - .015, .05, 0);
+  box(R.x1 - R.x0, .1, .03, zoccolo, 0, .05, R.z0 + .015); box(.03, .1, R.z1 - R.z0, zoccolo, R.x0 + .015, .05, 0); box(.03, .1, .11 - R.z0, zoccolo, R.x1 - .015, .05, (R.z0 + .11) / 2); box(.03, .1, R.z1 - 1.09, zoccolo, R.x1 - .015, .05, (R.z1 + 1.09) / 2);
 
   finestra(g, -.55, 1.55, R.z0 + .01, mat);
 
   // luci
   scene.add(new THREE.HemisphereLight(0xfff6ea, 0x8a7560, 1.4));
   const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(-1.5, 5, 3.5); sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: .5, far: 15 }); sun.shadow.bias = -.0005; sun.shadow.normalBias = .02; scene.add(sun);
+  sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: .5, far: 15 }); sun.shadow.bias = -.0005; sun.shadow.normalBias = .02; scene.add(sun); scene.add(sun.target);
   const caldo = new THREE.PointLight(0xffc98a, 6, 5, 1.6); caldo.position.set(-2, 1.9, 1.4); g.add(caldo);
 
   const put = async (file, x, y, z, ry = 0, s = S) => { const o = await model('mobili/' + file + '.gltf', { scale: s }); o.position.set(x, y, z); o.rotation.y = ry; g.add(o); return o; };
@@ -125,15 +140,38 @@ export async function costruisciStanza(scene) {
   tablet.position.set(1.4, .61, -1.62); tablet.rotation.y = .25; g.add(tablet);
 
   // premi sbloccabili: sacco da boxe e kart giocattolo
-  const sacco = new THREE.Group(); sacco.position.set(1.95, 0, 1.25); g.add(sacco);
-  box(.9, .02, .9, mat({ color: 0x3b82c4 }), 0, .01, 0, sacco);
-  const asta = mat({ color: 0x3a3f4b, metalness: .5, roughness: .4 }); box(.06, 1.9, .06, asta, .35, .95, -.3, sacco); box(.5, .05, .05, asta, .12, 1.88, -.3, sacco);
-  const saccoPivot = new THREE.Group(); saccoPivot.position.set(-.1, 1.85, -.3); sacco.add(saccoPivot);
-  const corpo = new THREE.Mesh(new THREE.CylinderGeometry(.19, .19, .85, 24), mat({ color: 0xd64545, roughness: .5 })); corpo.position.y = -.85; corpo.castShadow = true; saccoPivot.add(corpo);
-  const catena = new THREE.Mesh(new THREE.CylinderGeometry(.01, .01, .42, 6), asta); catena.position.y = -.21; saccoPivot.add(catena);
+  const sacco = new THREE.Group(); sacco.position.set(1.95, 0, 1.7); g.add(sacco);
+  const tappTex = canvasTex(256, 256, (c, w, h) => { c.fillStyle = '#2f6fb3'; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 900; i++) { c.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.08)'; c.fillRect(Math.random() * w, Math.random() * h, 3, 3); }
+    c.strokeStyle = 'rgba(10,30,60,.5)'; c.lineWidth = 3; c.beginPath(); c.moveTo(w / 2, 0); c.lineTo(w / 2, h); c.moveTo(0, h / 2); c.lineTo(w, h / 2); c.stroke(); c.strokeStyle = 'rgba(255,255,255,.4)'; c.lineWidth = 7; c.strokeRect(10, 10, w - 20, h - 20); });
+  box(1.0, .03, 1.0, mat({ map: tappTex, roughness: .92 }), 0, .015, 0, sacco);
+  // struttura: base, montante, braccio e rinforzo in tubo d'acciaio
+  const asta = mat({ color: 0x2c313c, metalness: .7, roughness: .35 });
+  const tubo = (r, l, x, y, z, rz = 0) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, l, 12), asta); m.position.set(x, y, z); m.rotation.z = rz; m.castShadow = true; sacco.add(m); return m; };
+  box(.46, .04, .46, asta, .33, .05, -.3, sacco); tubo(.035, 1.92, .35, 1.0, -.3); tubo(.03, .56, .1, 1.92, -.3, Math.PI / 2); tubo(.02, .46, .2, 1.725, -.3, .71);
+  const saccoPivot = new THREE.Group(); saccoPivot.position.set(-.1, 1.89, -.3); sacco.add(saccoPivot);
+  // il sacco: pelle rossa con cuciture e fascia, cinghie, anello e catena
+  const pelle = canvasTex(512, 384, (c, w, h) => { const gr = c.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#b23030'); gr.addColorStop(.5, '#e24c46'); gr.addColorStop(1, '#b23030'); c.fillStyle = gr; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 2600; i++) { c.fillStyle = Math.random() < .5 ? 'rgba(255,255,255,.05)' : 'rgba(0,0,0,.08)'; c.fillRect(Math.random() * w, Math.random() * h, 2, 2); }
+    c.fillStyle = '#f4efe6'; c.fillRect(0, h * .43, w, h * .14); c.fillStyle = '#20263a'; c.font = 'italic 900 40px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('FORZA', w * .25, h * .5 + 2); c.fillText('FORZA', w * .75, h * .5 + 2);
+    c.strokeStyle = 'rgba(50,10,10,.55)'; c.setLineDash([10, 7]); c.lineWidth = 3; [.16, .41, .59, .84].forEach(y => { c.beginPath(); c.moveTo(0, h * y); c.lineTo(w, h * y); c.stroke(); }); });
+  // la capsula distribuisce la texture per numero di punti e non per altezza: qui la si stende sull'altezza vera del sacco
+  const geoSacco = new THREE.CapsuleGeometry(.19, .52, 8, 24); { const p = geoSacco.attributes.position, uv = geoSacco.attributes.uv; for (let i = 0; i < p.count; i++) uv.setY(i, (p.getY(i) + .45) / .9); }
+  const corpo = new THREE.Mesh(geoSacco, mat({ map: pelle, roughness: .42 })); corpo.position.y = -.88; corpo.castShadow = true; saccoPivot.add(corpo);
+  const cuoio = mat({ color: 0x1d2130, roughness: .6 });
+  for (const [x, z] of [[.11, .11], [-.11, .11], [.11, -.11], [-.11, -.11]]) { const c = new THREE.Mesh(new THREE.CylinderGeometry(.012, .012, .3, 6), cuoio); c.position.set(x / 2, -.36, z / 2); c.rotation.set(-Math.atan2(z, .28), 0, Math.atan2(x, .28)); saccoPivot.add(c); }
+  const anello = new THREE.Mesh(new THREE.TorusGeometry(.03, .008, 8, 16), asta); anello.position.y = -.21; saccoPivot.add(anello);
+  const catena = new THREE.Mesh(new THREE.CylinderGeometry(.009, .009, .2, 6), asta); catena.position.y = -.1; saccoPivot.add(catena);
+  // lampo del colpo e schiacciamento del sacco
+  const stella = canvasTex(128, 128, (c, w) => { c.translate(w / 2, w / 2); const gr = c.createRadialGradient(0, 0, 0, 0, 0, w / 2); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.35, 'rgba(255,226,140,.85)'); gr.addColorStop(1, 'rgba(255,190,70,0)'); c.fillStyle = gr;
+    c.beginPath(); for (let i = 0; i < 18; i++) { const a = i / 18 * 6.283, r = i % 2 ? w * .17 : w * .5; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.fill(); });
+  const lampo = new THREE.Sprite(new THREE.SpriteMaterial({ map: stella, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending })); lampo.visible = false; saccoPivot.add(lampo);
+  let tLampo = 0;
+  const saccoColpo = (calcio, forte = 1) => { lampo.position.set(-.2, calcio ? -1.05 : -.8, .08); lampo.material.rotation = Math.random() * 6; lampo.scale.setScalar((.34 + Math.random() * .12) * forte); lampo.visible = true;
+    corpo.scale.set(.88, 1.03, 1.1); clearTimeout(tLampo); tLampo = setTimeout(() => { lampo.visible = false; corpo.scale.set(1, 1, 1); }, 90); };
   const kartGioco = await model('kart/kart-oopi.glb', { scale: .55 }); kartGioco.position.set(.55, 0, 1.75); kartGioco.rotation.y = -.6; g.add(kartGioco);
   kartGioco.traverse(o => { if (/character/i.test(o.name)) o.visible = false; });
   sacco.visible = false; kartGioco.visible = false;
 
-  return { gruppo: g, pavimento: floor, portaPivot, tablet, sacco, saccoPivot, kartGioco, poltrona: refs.poltrona, letto: refs.letto, scrivania: refs.scrivania, foglio, disegnoMuro, carta, caldo };
+  return { gruppo: g, pavimento: floor, portaPivot, tablet, sacco, saccoPivot, saccoColpo, sole: sun, muroPorta, kartGioco, poltrona: refs.poltrona, letto: refs.letto, scrivania: refs.scrivania, foglio, disegnoMuro, carta, caldo };
 }
