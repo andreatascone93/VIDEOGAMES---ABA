@@ -1,16 +1,17 @@
-// Area terapista del gioco del leone: impostazioni, grafico dell'andamento, tabella delle sessioni, esportazione dati.
+// Area terapista de Il segreto del parco: impostazioni, grafico dell'andamento, tabella delle sessioni, esportazione dati.
 // Modulo riutilizzabile: cambia solo FIELDS e le colonne di summary/csv per un altro gioco.
 import { db, save, cfg, DEFAULT_CFG, $ } from './core.js';
 
 const FIELDS = [
   ['nome', 'Nome del protagonista', 'text'],
-  ['livello', 'Livello', 'select', [[1, '1 · Guardo (modeling: Andrea chiede aiuto da solo)'], [2, '2 · Aiuto (aiuto programmato all\'arancione)'], [3, '3 · Decido io (aiuto ritardato)'], [4, '4 · Aspetto (l\'aiutante arriva dopo qualche secondo, leone più veloce)']]],
-  ['aiuto', 'Tipo di aiuto al livello 2', 'select', [['completo', 'Completo: pulsante e aiutante lampeggianti, freccia, voce, frase giusta per prima'], ['parziale', 'Parziale: solo lampeggio']]],
-  ['difficili', 'Enigmi che non si risolvono da soli (0–3, dagli ultimi)', 'number'],
-  ['secondiLeone', 'Secondi prima che il leone raggiunga Andrea', 'number'],
+  ['livello', 'Livello', 'select', [[1, '1 · Guardo (modeling: chiede aiuto da solo, con gentilezza)'], [2, '2 · Aiuto (aiuto programmato all\'arancione)'], [3, '3 · Decido io (aiuto ritardato)'], [4, '4 · Aspetto (il custode arriva dopo qualche secondo)']]],
+  ['aiuto', 'Tipo di aiuto al livello 2', 'select', [['completo', 'Completo: pulsante e custode lampeggianti, freccia, voce, frase gentile per prima'], ['parziale', 'Parziale: solo lampeggio']]],
+  ['difficili', 'Enigmi che non si risolvono da soli (0–4, dagli ultimi)', 'number'],
   ['secondiAiutoRitardato', 'Secondi prima dell\'aiuto ritardato (liv. 3–4)', 'number'],
-  ['attesaAiuto', 'Secondi di attesa dell\'aiutante (liv. 4)', 'number'],
-  ['provaPrima', 'L\'aiutante chiede di provare almeno una volta prima', 'select', [['false', 'No'], ['true', 'Sì']]],
+  ['attesaAiuto', 'Secondi di attesa del custode (liv. 4)', 'number'],
+  ['provaPrima', 'Il custode chiede di provare almeno una volta prima', 'select', [['false', 'No'], ['true', 'Sì']]],
+  ['respiri', 'Respiri della pausa "Fai un respiro"', 'number'],
+  ['musica', 'Musica di sottofondo', 'select', [['true', 'Sì'], ['false', 'No']]],
   ['criterio', 'Criterio di padronanza (%)', 'number'],
   ['sessioniCriterio', 'Sessioni consecutive per il criterio', 'number'],
   ['voce', 'Voce narrante', 'select', [['true', 'Sì'], ['false', 'No']]],
@@ -27,7 +28,7 @@ export function initTerapista({ onClose }) {
     document.querySelectorAll('#form [data-k]').forEach(el => { const k = el.dataset.k; let v = el.value; if (typeof DEFAULT_CFG[k] === 'boolean') v = v === 'true'; else if (typeof DEFAULT_CFG[k] === 'number') v = Number(v); db.cfg[k] = v; });
     save(); renderData(); $('savedNote').textContent = 'Salvato.'; setTimeout(() => $('savedNote').textContent = '', 2000);
   };
-  $('exportCsv').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv()], { type: 'text/csv' })); a.download = 'leone-dati.csv'; a.click(); };
+  $('exportCsv').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv()], { type: 'text/csv' })); a.download = 'parco-dati.csv'; a.click(); };
   $('copyCsv').onclick = async () => { try { await navigator.clipboard.writeText(csv()); $('copyNote').textContent = 'Dati copiati: incollali in un foglio di calcolo.'; } catch (e) { $('copyNote').textContent = 'Copia non consentita qui.'; } };
   $('clearData').onclick = () => $('confirmModal').classList.add('active');
   $('confirmNo').onclick = () => $('confirmModal').classList.remove('active');
@@ -49,13 +50,11 @@ const OCC = ['indipendente', 'anticipata', 'con_aiuto', 'problema'];
 export function summary(s) {
   const occ = s.prove.filter(t => t.difficile && OCC.includes(t.tipo));
   const ind = occ.filter(t => t.tipo === 'indipendente' || t.tipo === 'anticipata').length, aid = occ.filter(t => t.tipo === 'con_aiuto').length;
-  const ant = occ.filter(t => t.tipo === 'anticipata').length, prob = occ.filter(t => t.tipo === 'problema');
-  const molla = prob.filter(t => t.scelta === 'molla').length, ragg = prob.filter(t => t.scelta === 'raggiunto').length;
-  const chieste = occ.filter(t => t.forma), spec = chieste.filter(t => t.forma === 'specifica').length;
+  const ant = occ.filter(t => t.tipo === 'anticipata').length, molla = s.prove.filter(t => t.esito === 'molla').length;
+  const rich = s.richieste || [], gentili = rich.filter(r => r.forma === 'gentile').length, brusche = rich.filter(r => r.forma === 'brusca').length, nonNec = rich.filter(r => !r.difficile).length;
   const lats = occ.filter(t => t.latenzaMs != null).map(t => t.latenzaMs);
   const facili = s.prove.filter(t => !t.difficile && t.tipo === 'da_solo').length;
-  const rich = s.richieste || [], nonNec = rich.filter(r => !r.difficile).length;
-  return { occ: occ.length, ind, aid, ant, molla, ragg, colpi: s.colpi || 0, spec, chieste: chieste.length, facili, nonNec,
+  return { occ: occ.length, ind, aid, ant, molla, colpi: s.colpi || 0, gentili, brusche, scortesi: s.scortesi || 0, scuse: s.scuse || 0, grazie: s.grazie || 0, respiri: s.respiri || 0, amici: s.amici, facili, nonNec, richieste: rich.length,
     lat: lats.length ? (lats.reduce((a, b) => a + b, 0) / lats.length / 1000).toFixed(1) : '', pct: occ.length ? Math.round(ind / occ.length * 100) : null };
 }
 
@@ -63,9 +62,9 @@ function renderData() {
   const ss = db.sessions;
   const rows = ss.slice().reverse().map(s => {
     const m = summary(s), d = new Date(s.inizio);
-    return '<tr><td>' + d.toLocaleDateString('it-IT') + ' ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + '</td><td>' + s.livello + (s.aiuto ? ' (' + s.aiuto + ')' : '') + '</td><td>' + m.occ + '</td><td>' + m.ind + (m.ant ? ' (' + m.ant + ' in anticipo)' : '') + '</td><td>' + m.aid + '</td><td>' + (m.chieste ? m.spec + ' / ' + m.chieste : '–') + '</td><td>' + m.molla + ' / ' + m.ragg + '</td><td>' + m.colpi + '</td><td>' + m.facili + (m.nonNec ? ' (' + m.nonNec + ' aiuti non necessari)' : '') + '</td><td>' + (m.pct == null ? '–' : m.pct + '%') + '</td><td>' + (m.lat ? m.lat + ' s' : '–') + '</td></tr>';
+    return '<tr><td>' + d.toLocaleDateString('it-IT') + ' ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) + '</td><td>' + s.livello + (s.aiuto ? ' (' + s.aiuto + ')' : '') + '</td><td>' + m.occ + '</td><td>' + m.ind + (m.ant ? ' (' + m.ant + ' in anticipo)' : '') + '</td><td>' + m.aid + '</td><td>' + m.gentili + ' / ' + m.brusche + ' / ' + m.scortesi + '</td><td>' + m.grazie + ' / ' + m.scuse + '</td><td>' + (m.amici == null ? '–' : m.amici + ' su 4') + '</td><td>' + m.respiri + '</td><td>' + m.molla + ' / ' + m.colpi + '</td><td>' + m.facili + (m.nonNec ? ' (' + m.nonNec + ' aiuti non necessari)' : '') + '</td><td>' + (m.pct == null ? '–' : m.pct + '%') + '</td><td>' + (m.lat ? m.lat + ' s' : '–') + '</td></tr>';
   }).join('');
-  $('sessTable').innerHTML = ss.length ? '<table><tr><th>Data</th><th>Livello</th><th>Occasioni</th><th>Aiuto chiesto da solo</th><th>Con aiuto</th><th>Richieste specifiche</th><th>Lascia perdere / raggiunto</th><th>Pannello colpito</th><th>Enigmi facili risolti da solo</th><th>% da solo</th><th>Latenza media</th></tr>' + rows + '</table>' : '<p class="note">Nessuna sessione registrata.</p>';
+  $('sessTable').innerHTML = ss.length ? '<table><tr><th>Data</th><th>Livello</th><th>Occasioni</th><th>Aiuto chiesto da solo</th><th>Con aiuto</th><th>Richieste gentili / brusche / scortesi</th><th>Grazie / scuse</th><th>Amici a fine partita</th><th>Respiri</th><th>Lascia perdere / pannello colpito</th><th>Enigmi facili risolti da solo</th><th>% da solo</th><th>Latenza media</th></tr>' + rows + '</table>' : '<p class="note">Nessuna sessione registrata.</p>';
   const c = cfg(), lv = Number(c.livello), lastS = ss.filter(s => s.livello === lv && lv > 1).slice(-c.sessioniCriterio);
   let adv;
   if (lv === 1) adv = 'Livello 1: dopo 1–2 visioni del modello, passa al livello 2 con aiuto completo.';
@@ -90,7 +89,7 @@ function drawChart(ss) {
 }
 
 function csv() {
-  const k = ['zona', 'difficile', 'tipo', 'forma', 'scelta', 'aiuto', 'chiamata', 'latenzaMs', 'frustrazione', 'errori', 'colpi', 'primaDiProvare', 'attesaS', 'nonNecessario', 'esito', 'tempoS'];
+  const k = ['zona', 'difficile', 'tipo', 'forma', 'grado', 'grazie', 'scelta', 'aiuto', 'chiamata', 'latenzaMs', 'frustrazione', 'errori', 'colpi', 'respiri', 'scortesi', 'scuse', 'primaDiProvare', 'attesaS', 'nonNecessario', 'fiducia', 'amico', 'esito', 'tempoS'];
   const lines = [['sessione', 'inizio', 'livello', 'aiuto_livello2', 'enigmi_difficili', 'ora', ...k].join(';')];
   db.sessions.forEach(s => s.prove.forEach(t => lines.push([s.id, s.inizio, s.livello, s.aiuto, s.difficili, t.ora, ...k.map(x => t[x] == null ? '' : x === 'latenzaMs' ? (t[x] / 1000).toFixed(1) : t[x])].join(';'))));
   lines.push(''); lines.push(['sessione', 'zona', 'enigma_difficile', 'forma_richiesta', 'errori_prima', 'da_dove'].join(';'));

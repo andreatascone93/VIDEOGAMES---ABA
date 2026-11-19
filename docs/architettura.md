@@ -76,37 +76,47 @@ Dati: ogni occasione registra tipo (`indipendente`, `con_aiuto`, `anticipata`, `
 | `kart-royale/` | Kart Royale compilato con la modalità ABA |
 | `strumenti/` | convertitore del personaggio, visualizzatore di modelli, preparazione dell'anteprima |
 
-## Il leone e il caos (3D)
+## Il segreto del parco (3D)
 
-Gioco 3D in Three.js nella cartella `giochi/leone`, con le sue copie dei moduli riutilizzabili. Il protagonista (Andrea, nome modificabile) è in gita allo zoo: un temporale fa saltare la corrente, i recinti si aprono e Rocco, un leone goffo e insistente, vuole il panino nel suo zaino. Per arrivare al pullman bisogna aprire tre cancelli, ognuno con un enigma sul pannello di controllo e un aiutante vicino (Luca, compagno di classe; Bruno, il custode; Elena, la maestra).
+Puzzle game 3D in Three.js nella cartella `giochi/parco`, con le sue copie dei moduli riutilizzabili. In fondo al Parco dei Tigli c'è una cupola chiusa da trent'anni. Il protagonista (Andrea, nome modificabile) trova una chiave d'ottone e un biglietto dell'inventore Ottavio Lumen: quattro cancelli, quattro custodi. Ogni cancello ha un enigma sul pannello e un custode vicino: Luca (un ragazzo del parco), Bruno (il giardiniere), Elena (la violinista del chiosco), Pietro (il vecchio amico di Ottavio). Il principio del gioco, mai detto: si arriva in fondo stando bene con sé stessi e con gli altri.
+
+| Tappa | Enigma | Abilità | Cosa manca nella versione difficile |
+| --- | --- | --- | --- |
+| Roseto | codice di quattro simboli | attenzione | due simboli coperti dal fango |
+| Fontana | tubi da girare | logica | un tubo arrugginito: serve la chiave inglese |
+| Chiosco | carillon da ripetere | memoria | suona una volta sola e in fretta: serve chi conosce la melodia |
+| Cupola | mosaico del cielo | visuospaziale | la tessera centrale e il disegno di riferimento |
 
 ### Contingenze
 
 | Voce | Nel gioco |
 | --- | --- |
-| MO | enigma che da soli non si risolve (indizio coperto dal fango, pezzo fissato con una vite) e leone che si avvicina col tempo |
-| SD | frustrazione in zona arancione (60 su 100) dopo almeno un tentativo sbagliato, con l'aiutante in vista |
-| Risposta target | chiedere aiuto all'aiutante in modo specifico, dal pannello ("Chiedi aiuto a…") o andando da lui ("Parla con…") |
-| Rinforzo | l'aiutante dà proprio quello che manca e lascia finire; il leone si ferma; il cancello si apre; +100 XP; l'aiutante entra nella squadra |
-| Risposte problema | lasciar perdere (panchina o pulsante), colpire il pannello, provare a caso finché arriva il leone |
-| Conseguenze | il leone prende lo zaino e la zona ricomincia; il pannello colpito si blocca 8 secondi; niente XP |
+| MO | enigma che da soli non si risolve: manca qualcosa che ha solo il custode |
+| SD | frustrazione in zona arancione (60 su 100) dopo almeno un tentativo sbagliato, con il custode in vista |
+| Risposta target | chiedere aiuto, dal pannello ("Chiedi aiuto a…") o andando dal custode ("Parla con…") |
+| Forma gentile e precisa | aiuto pieno (pezzo mancante più suggerimento), fiducia +1, +20 XP |
+| Forma brusca | aiuto minimo (solo il pezzo mancante) |
+| Forma scortese | il custode si offende e se ne va; servono le scuse, e l'aiuto sarà minimo; fiducia −2 |
+| Dopo l'aiuto | "Grazie": fiducia +1. "Era ora": fiducia −1 |
+| Fiducia ≥ 2 | il custode diventa amico e accompagna il protagonista |
+| Finale | la cupola si apre di uno spicchio per ogni persona presente (da 1 a 5): il tesoro si vede tutto solo con quattro amici |
+| Risposte problema | lasciar perdere (si torna a casa, si riparte "il giorno dopo"), colpire il pannello (si blocca, il custode perde fiducia) |
+| Autoregolazione | sopra l'arancione il pannello si annebbia e la musica si incupisce; "Fai un respiro" abbassa la frustrazione |
 
-Forma della richiesta: specifica (aiuto subito), generica (l'aiutante chiede che cosa serve), pretesa (l'aiutante chiede di dirlo in un altro modo). Enigmi facili: si risolvono da soli (+60 XP); chiedere aiuto lì porta solo un incoraggiamento.
+Livelli: 1 modeling (il protagonista chiede con gentilezza e ringrazia da solo), 2 aiuto completo (pulsante e custode lampeggiano, freccia, voce, frase gentile per prima) o parziale, 3 aiuto ritardato, 4 il custode arriva dopo qualche secondo (tolleranza all'attesa).
 
-Livelli: 1 modeling (Andrea chiede aiuto da solo), 2 aiuto completo (pulsante e aiutante lampeggiano, freccia, voce, frase specifica per prima) o parziale, 3 aiuto ritardato, 4 l'aiutante arriva dopo qualche secondo e il leone è più veloce (tolleranza all'attesa).
-
-Dati per ogni enigma: tipo (`indipendente`, `anticipata`, `con_aiuto`, `prima_di_provare`, `problema`, `modello_osservato`, `da_solo`), forma della prima richiesta, da dove è partita, latenza dall'arancione, frustrazione, errori, colpi al pannello, attesa, esito, tempo. Più l'elenco di tutte le richieste, anche quelle sugli enigmi facili.
+Dati per ogni enigma: tipo (`indipendente`, `anticipata`, `con_aiuto`, `prima_di_provare`, `problema`, `modello_osservato`, `da_solo`), forma della prima richiesta (`gentile`, `brusca`, `scortese`), grado di aiuto ricevuto, grazie, scuse, risposte scortesi, respiri, colpi, latenza dall'arancione, frustrazione, errori, attesa, fiducia finale del custode, se è diventato amico, esito, tempo. Per sessione: amici e spicchi aperti. Più l'elenco di tutte le richieste, anche quelle sugli enigmi facili.
 
 ### File
 
 | File | Ruolo |
 | --- | --- |
-| `index.html` | interfaccia (HUD, pannello del cancello, frasi, area terapista) |
-| `js/main.js` | storia, contingenze, leone, aiutanti, aiuti programmati, esiti, camera |
-| `js/enigmi.js` | i tre enigmi in versione facile e difficile |
-| `js/zoo.js` | viale, cancelli, pannelli, cartelli, recinti, alberi, pullman |
-| `js/leone.js` | Rocco, fatto con forme semplici e animato a mano |
+| `index.html` | interfaccia (HUD, pannello del cancello, frasi, respiro, area terapista) |
+| `js/main.js` | storia, contingenze, custodi e fiducia, aiuti programmati, esiti, finale, camera |
+| `js/enigmi.js` | i quattro enigmi, facili e difficili, con aiuto minimo o pieno |
+| `js/parco.js` | viale, cancelli, pannelli, cartelli, fontana, chiosco, giostra, cupola |
+| `js/musica.js` | musica generata dal browser, allegra o cupa secondo la frustrazione |
 | `js/frustrazione.js` | la frustrazione continua (stesso motore della rabbia) |
-| `js/core.js`, `assets.js`, `personaggio.js`, `volto.js`, `persone.js`, `terapista.js` | moduli comuni copiati dalla cameretta |
+| `js/core.js`, `assets.js`, `personaggio.js`, `volto.js`, `persone.js`, `terapista.js` | moduli comuni copiati dalla cameretta (in `core.js` la scelta della voce) |
 
 I principi riutilizzabili sono in [principi.md](principi.md).

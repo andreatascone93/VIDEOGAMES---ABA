@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Il leone e il caos</title>
+<title>Il segreto del parco</title>
 <script type="importmap">
 { "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
 </script>
@@ -108,13 +108,6 @@
   .modal input { font-size: 28px; text-align: center; padding: 8px; letter-spacing: 8px; }
 
 
-  /* il leone alle spalle */
-  #leoneHud { top: 14px; right: 66px; margin-top: 64px; padding: 8px 14px 10px; width: 230px; display: none; }
-  #leoneHud .top { display: flex; justify-content: space-between; font-weight: 800; letter-spacing: .08em; font-size: 13px; color: var(--quiet); }
-  #leoneHud .track { height: 12px; border-radius: 5px; background: rgba(255,255,255,.1); margin-top: 7px; overflow: hidden; }
-  #leoneHud .fill { height: 100%; width: 0; background: linear-gradient(90deg, #e0a64a, #f5862a); border-radius: 5px; }
-  #leoneHud.vicino .fill { animation: segpulse .6s ease-in-out infinite; }
-  #leoneHud .top b { color: #e0a64a; }
   #attesa { position: fixed; z-index: 8; top: 40%; left: 50%; transform: translate(-50%, -50%); padding: 12px 22px; font-size: 24px; font-weight: 800; display: none; }
 
   /* il pannello del cancello: a destra, Andrea resta visibile a sinistra */
@@ -127,7 +120,7 @@
   #pIndizio { width: 100%; border-radius: 10px; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
   #pEnigma { flex: 1; background: #0e1522; border-radius: 16px; padding: 14px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 2px #2c3a50; }
   #pannello.rotto #pEnigma { opacity: .35; pointer-events: none; filter: grayscale(1); }
-  #pannello .azioni { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  #pannello .azioni { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
   .azione { position: relative; padding: 12px 8px; border-radius: 12px; font-size: clamp(13px, 1.5vw, 17px); font-weight: 900; color: #fff; background: rgba(16,22,36,.92);
     box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 6px 16px rgba(0,0,0,.3); }
   .azione:active { transform: translateY(2px); }
@@ -135,11 +128,29 @@
   .azione.freccia::before { content: "▼"; position: absolute; left: 50%; top: -36px; margin-left: -12px; font-size: 26px; color: var(--verde); animation: giu .7s ease-in-out infinite alternate; }
   @keyframes posapulse { 50% { transform: scale(1.05); } }
   @keyframes giu { to { transform: translateY(8px); } }
-  body.inpannello #caption { left: 14px; transform: none; width: min(33vw, 300px); font-size: 16px; text-align: left; bottom: 86px; }
+  body.inpannello #caption { left: 14px; transform: none; width: min(33vw, 300px); font-size: 16px; text-align: left; bottom: 14px; }
   body.inpannello #objective, body.inpannello #stats { opacity: 0; }
-  body.inpannello #leoneHud { right: auto; left: 14px; top: auto; bottom: 14px; margin: 0; width: min(33vw, 260px); }
   body.inpannello #anger, body.inpannello #signals { width: 33vw; max-width: 260px; }
 
+  /* con la testa calda si vede peggio */
+  #pEnigma { transition: filter .8s; }
+  #pEnigma.nebbia { filter: blur(1.6px) saturate(.35) brightness(.8); animation: trema .35s linear infinite; }
+  @keyframes trema { 25% { transform: translate(1.5px, -1px); } 50% { transform: translate(-1px, 1.5px); } 75% { transform: translate(1px, 1px); } }
+  /* il respiro */
+  #breathOv { background: rgba(8, 14, 26, .55); z-index: 11; }
+  .breath { width: 180px; height: 180px; border-radius: 50%; background: radial-gradient(circle, rgba(150,235,190,.85), rgba(63,207,122,.35) 70%, transparent 72%);
+    border: 3px solid rgba(160,240,200,.8); transition: transform 2.7s ease-in-out; box-shadow: 0 0 40px rgba(63,207,122,.45); }
+  .breath-text { font-size: clamp(26px, 3.6vw, 40px); font-weight: 900; margin-top: 30px; min-height: 1.3em; text-shadow: 0 3px 10px rgba(0,0,0,.5); }
+  .breath-count { font-size: 15px; letter-spacing: .14em; color: #bfe9cf; font-weight: 800; margin-top: 4px; }
+  /* carillon e mosaico */
+  .en-note { display: flex; gap: 8px; } .en-note i { width: 22px; height: 22px; border-radius: 50%; background: #263246; box-shadow: inset 0 0 0 2px #33445c; } .en-note i.ok { box-shadow: inset 0 0 0 2px #fff; }
+  .en-campane { display: flex; gap: 14px; }
+  .en-campana { width: clamp(70px, 9vw, 104px); height: clamp(84px, 11vw, 124px); border-radius: 50% 50% 16px 16px; background: var(--c); opacity: .62; box-shadow: 0 6px 0 rgba(0,0,0,.4); transition: opacity .08s, transform .08s; }
+  .en-campana.on { opacity: 1; transform: scale(1.08); box-shadow: 0 0 26px var(--c); }
+  .en-mosaico { display: grid; grid-template-columns: repeat(3, clamp(74px, 9.5vw, 104px)); gap: 4px; padding: 6px; background: #0a0f1a; border-radius: 10px; }
+  .en-tessera { padding: 0; aspect-ratio: 1; background: #1a2433; border-radius: 6px; overflow: hidden; font-size: 34px; font-weight: 900; color: #55657f; }
+  .en-tessera canvas { width: 100%; height: 100%; display: block; }
+  .en-tessera.vuota { box-shadow: inset 0 0 0 3px #55657f; background: repeating-linear-gradient(45deg, #141c29, #141c29 8px, #1a2433 8px, #1a2433 16px); }
   /* enigmi */
   .enigma { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
   .en-tit { font-size: clamp(15px, 1.8vw, 19px); font-weight: 800; color: #cfe0ff; }
@@ -175,8 +186,7 @@
 <div class="hud panel" id="anger"><div class="top"><span>FRUSTRAZIONE</span><span class="stato" id="angerState">Tranquillo</span></div>
   <div class="track"><div class="fill" id="angerFill"></div><i style="left:20%"></i><i style="left:40%"></i><i style="left:60%"></i><i style="left:80%"></i></div></div>
 <div class="hud panel" id="signals"></div>
-<div class="hud panel" id="stats"><div><span class="k">XP</span><span class="v" id="sXp">0</span></div><div><span class="k">SQUADRA</span><span class="v" id="sSquadra">0</span></div></div>
-<div class="hud panel" id="leoneHud"><div class="top"><span>ROCCO SI AVVICINA</span><b>🦁</b></div><div class="track"><div class="fill" id="leoneFill"></div></div></div>
+<div class="hud panel" id="stats"><div><span class="k">XP</span><span class="v" id="sXp">0</span></div><div><span class="k">AMICI</span><span class="v" id="sSquadra">0</span></div></div>
 <div class="hud panel" id="objective"></div>
 <div class="hud panel" id="caption"></div>
 <div class="panel" id="attesa"></div>
@@ -190,13 +200,13 @@
 
 <section class="overlay active" id="loading">
   <div class="kicker">CARICAMENTO</div>
-  <h1 id="loadTitle">Il leone e il caos</h1>
+  <h1 id="loadTitle">Il segreto del parco</h1>
   <div id="bar"><div></div></div>
 </section>
 
 <section class="overlay" id="home">
   <div class="kicker">UNA STORIA DA GIOCARE</div>
-  <h1>Il leone e il caos</h1>
+  <h1>Il segreto del parco</h1>
   <p class="lead" id="homeLead"></p>
   <button class="big" id="startBtn">GIOCA</button>
 </section>
@@ -210,6 +220,7 @@
     </div>
     <div class="azioni">
       <button class="azione" id="bAiuto">Chiedi aiuto</button>
+      <button class="azione" id="bRespira">Fai un respiro</button>
       <button class="azione" id="bMolla">Lascio perdere</button>
       <button class="azione" id="bColpisci">Colpisci il pannello</button>
       <button class="azione" id="bVia">Allontanati</button>
@@ -217,9 +228,15 @@
   </div>
 </section>
 
+<section class="overlay" id="breathOv">
+  <div class="breath" id="breath"></div>
+  <div class="breath-text" id="breathText"></div>
+  <div class="breath-count" id="breathCount"></div>
+</section>
+
 <section class="overlay" id="end">
   <div class="kicker">FINE DELLA SESSIONE</div>
-  <h1>Tutti sul pullman!</h1>
+  <h1 id="endTitle">La cupola</h1>
   <p class="lead" id="endLead"></p>
   <button class="big" id="endBtn">TORNA AL MENU</button>
 </section>
@@ -234,7 +251,7 @@
   <h2>Andamento</h2>
   <div id="advice"></div>
   <svg id="chart" viewBox="0 0 760 220"></svg>
-  <p class="note">Percentuale di enigmi bloccati in cui il giocatore chiede aiuto da solo, senza aiuto programmato (livelli 2–4). Linea tratteggiata: criterio di padronanza.</p>
+  <p class="note">Percentuale di enigmi bloccati in cui il giocatore chiede aiuto da solo, senza aiuto programmato (livelli 2–4). Cortesia, scuse e amici sono nella tabella. Linea tratteggiata: criterio di padronanza.</p>
   <h2>Sessioni</h2>
   <div id="sessTable"></div>
   <div class="row">

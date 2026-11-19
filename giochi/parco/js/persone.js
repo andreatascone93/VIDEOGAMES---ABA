@@ -36,7 +36,7 @@ export function togli(p) { const el = attivi.get(p); if (el) { el.remove(); atti
 export function zittisci() { for (const p of [...attivi.keys()]) togli(p); }
 // mostra il fumetto, lo legge a voce e aspetta il tempo di leggerlo
 export async function parla(p, testo, { ms = 0, voce = true, resta = false } = {}) {
-  const el = fumetto(p, testo); if (voce) speak(testo);
+  const el = fumetto(p, testo); if (voce) speak(testo, { pitch: p.tono || 1 });
   await sleep(ms || clamp(1500 + testo.length * 58, 2300, 6500));
   if (!resta && attivi.get(p) === el) togli(p);
 }

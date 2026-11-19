@@ -1,4 +1,4 @@
-# Principi per costruire giochi ABA come "La cameretta di Francesco" e "Il leone e il caos"
+# Principi per costruire giochi ABA come "La cameretta di Francesco" e "Il segreto del parco"
 
 Questo documento raccoglie i principi emersi costruendo i primi giochi. Serve a progettare i prossimi giochi senza ripartire da zero. Va aggiornato ogni volta che il codice insegna qualcosa di nuovo.
 
@@ -63,31 +63,35 @@ Cameretta, tablet, porta, salone, mamma, papà, altri bambini: gli stessi stimol
 Impostazioni protette da PIN; dati solo sul dispositivo; nessun nome reale del bambino; uso dentro un programma supervisionato, con consenso dei genitori e assenso del bambino. Le sconfitte programmate sono un'esposizione voluta: le decide il terapista. I genitori nel gioco fanno da modello anche per i genitori veri: poche parole, tono calmo, conseguenza coerente.
 
 ### 1.15 La risposta alternativa deve funzionare come quella problema (comunicazione funzionale)
-*Da "Il leone e il caos".* Lasciar perdere un compito difficile serve a uscire dalla difficoltà. La richiesta di aiuto insegnata deve portare allo stesso risultato, più in fretta e meglio: l'aiutante dà proprio quello che manca, il cancello si apre, il leone si ferma. È il cuore del training di comunicazione funzionale (Carr e Durand 1985; Tiger, Hanley e Bruzek 2008). Lasciar perdere invece non fa sparire il problema: il leone arriva lo stesso e la zona ricomincia (estinzione della fuga, in forma lieve e adatta a un bambino).
-*Dove:* `aiutoDato`, `molla`, `raggiunto` in `giochi/leone/js/main.js`.
+*Da "Il segreto del parco".* Lasciar perdere un compito difficile serve a uscire dalla difficoltà. La richiesta di aiuto insegnata deve portare allo stesso risultato, più in fretta e meglio: il custode dà proprio quello che manca e il cancello si apre. È il cuore del training di comunicazione funzionale (Carr e Durand 1985; Tiger, Hanley e Bruzek 2008). Lasciar perdere invece non fa sparire il problema: si torna a casa, il cancello resta chiuso e il giorno dopo l'enigma è ancora lì.
+*Dove:* `aiutoDato`, `molla` in `giochi/parco/js/main.js`.
 
 ### 1.16 Chiedere deve costare meno che mollare
-La richiesta vince solo se è la strada più facile ed efficace (efficienza della risposta: Horner e Day 1991). Il pulsante "Chiedi aiuto" è sul pannello, accanto a "Lascio perdere" e "Colpisci il pannello", sempre presente; l'aiutante si può chiamare da lontano e arriva lui; mentre si chiede aiuto il leone si ferma. Colpire il pannello invece fa perdere tempo (il pannello si blocca) e non porta niente.
-*Dove:* `#bAiuto` in `giochi/leone/index.html`, `chiediAiuto` e `colpisci` in `main.js`.
+La richiesta vince solo se è la strada più facile ed efficace (efficienza della risposta: Horner e Day 1991). Il pulsante "Chiedi aiuto" è sul pannello, accanto a "Lascio perdere" e "Colpisci il pannello", sempre presente; il custode si può chiamare da lontano e arriva lui. Colpire il pannello invece lo blocca per qualche secondo e non porta niente.
+*Dove:* `#bAiuto` in `giochi/parco/index.html`, `chiediAiuto` e `colpisci` in `main.js`.
 
-### 1.17 Modellare la forma della richiesta, non solo la richiesta
-Tre forme, tre conseguenze. Specifica ("Bruno, mi aiuti? Un pezzo è fissato con una vite"): aiuto subito. Generica ("Mi aiuti?"): l'aiutante chiede che cosa serve, poi aiuta. Pretesa ("Fallo tu!"): l'aiutante aiuta volentieri ma chiede di dirlo in un altro modo, e il compito resta del bambino. L'aiutante non risolve mai tutto: dà il pezzo che manca e lascia finire (si evita la dipendenza dall'aiuto). Si registra la forma della prima richiesta.
-*Dove:* `dialogoAiuto` in `main.js`.
+### 1.17 La cortesia si rinforza con il grado di aiuto, non con una lode
+Stessa richiesta, tre forme, tre conseguenze sociali diverse (rinforzo differenziale della forma del mand). Gentile e precisa ("Scusa Bruno, mi daresti una mano? Un tubo è bloccato…"): aiuto pieno, cioè il pezzo che manca più un suggerimento. Precisa ma brusca ("Bruno, mi serve una chiave inglese"): aiuto minimo, solo il pezzo che manca. Scortese ("Muoviti, fallo tu!"): il custode si offende e torna al suo posto; non verrà più se chiamato da lontano, e per riavere aiuto bisogna andare da lui e scusarsi, ottenendo comunque l'aiuto minimo. Nessuno dice "bravo, sei stato gentile": la differenza si vede in quanto aiuto arriva. Il custode non risolve mai tutto: lascia finire (si evita la dipendenza dall'aiuto).
+*Dove:* `dialogoAiuto`, `scortese`, `aiutoDato(A, pieno)` in `main.js`; `sblocca(pieno)` in `js/enigmi.js`.
 
 ### 1.18 Chiedere aiuto solo quando serve
-Una richiesta utile è condizionale: si chiede quando il compito supera le proprie possibilità, non al primo ostacolo (Reichle e Johnston 1999). Per questo ci sono enigmi facili, da risolvere da soli e rinforzati come autonomia, ed enigmi che da soli non si risolvono (un indizio coperto, un attrezzo che ha solo l'aiutante). Sugli enigmi facili l'aiutante incoraggia a riprovare; con l'impostazione `provaPrima` chiede un tentativo prima di aiutare. La richiesta fatta prima di qualsiasi tentativo si registra a parte (`prima_di_provare`) e non conta nella percentuale.
+Una richiesta utile è condizionale: si chiede quando il compito supera le proprie possibilità, non al primo ostacolo (Reichle e Johnston 1999). Per questo ci sono enigmi facili, da risolvere da soli e rinforzati come autonomia, ed enigmi che da soli non si risolvono. Sugli enigmi facili il custode incoraggia a riprovare; con l'impostazione `provaPrima` chiede un tentativo prima di aiutare. La richiesta fatta prima di qualsiasi tentativo si registra a parte (`prima_di_provare`) e non conta nella percentuale.
 *Dove:* `difficile`, `dialogoAiuto` in `main.js`; `js/enigmi.js`.
 
 ### 1.19 Dopo la richiesta, saper aspettare
-Nella vita vera l'aiuto non arriva sempre subito. Al livello 4 l'aiutante risponde "Arrivo, un attimo" e arriva dopo qualche secondo, con il leone un po' più veloce: è l'assottigliamento del rinforzo dopo il training di comunicazione funzionale (Hanley, Iwata e Thompson 2001; Hagopian e colleghi 2011). L'attesa si registra.
+Nella vita vera l'aiuto non arriva sempre subito. Al livello 4 il custode risponde "Arrivo, un attimo" e arriva dopo qualche secondo: è l'assottigliamento del rinforzo dopo il training di comunicazione funzionale (Hanley, Iwata e Thompson 2001; Hagopian e colleghi 2011). L'attesa si registra.
 *Dove:* `attesaAiuto` in `core.js`, `chiediAiuto` in `main.js`.
 
-### 1.20 Più aiutanti diversi, per generalizzare
-Ogni zona ha un aiutante diverso: un compagno di classe, il custode, la maestra. La stessa richiesta funziona con persone diverse, come a scuola e a casa (esempi multipli: Stokes e Baer 1977). Chi aiuta entra nella squadra e accompagna il protagonista fino alla fine: la conseguenza sociale naturale del chiedere aiuto è avere qualcuno al proprio fianco.
+### 1.20 Le conseguenze sociali si accumulano e contano alla fine
+Ogni custode ha una fiducia che sale e scende con il modo in cui viene trattato: richiesta gentile +1, grazie dopo l'aiuto +1, "era ora" −1, risposta scortese −2, pannello preso a calci davanti a lui −1. Chi arriva a fidarsi diventa amico e accompagna il protagonista; le persone si ricordano anche "il giorno dopo". Alla fine la cupola ha cinque manovelle: si apre uno spicchio per ogni persona presente. Il tesoro si vede tutto solo se sono venuti tutti. Così la conseguenza delle scelte sociali è grande, coerente e ritardata, come nella vita, e resta sempre recuperabile (ci si può scusare, si può rigiocare). Quattro custodi diversi per età e ruolo servono anche a generalizzare (esempi multipli: Stokes e Baer 1977).
+*Dove:* `fiducia`, `offeso`, `inSquadra` in `main.js`; `cupola.apri(n)` in `js/parco.js`.
 
-### 1.21 La pressione è un'operazione motivazionale, non una minaccia
-Il leone che si avvicina rende il compito più urgente e fa salire la frustrazione, così la richiesta si allena nella condizione in cui serve. Resta però un leone da cartone animato: goffo, con occhi grandi e un sorrisetto, vuole solo il panino nello zaino. Quando "raggiunge" il protagonista lo fa cadere sul sedere e se ne va con lo zaino. Niente denti, artigli, buio o musica da paura.
-*Dove:* `giochi/leone/js/leone.js`.
+### 1.21 Stare bene con sé stessi è una risposta che si può scegliere
+Quando la frustrazione entra in arancione il pannello si annebbia e trema (con la testa calda si vede peggio) e la musica si incupisce. "Fai un respiro" è sempre disponibile: ogni respiro toglie un po' di peso, il pannello torna nitido e la musica si rasserena. È una risposta di autoregolazione rinforzata dalle sue conseguenze naturali, la stessa logica della pausa nella cameretta. Il respiro non risolve l'enigma: calma abbastanza da poter scegliere bene il passo dopo, cioè chiedere una mano.
+*Dove:* `respira` in `main.js`, classe `nebbia` in `index.html`.
+
+### 1.22 Il principio si gioca, non si predica
+Il tema del gioco (si arriva in fondo stando in armonia con sé stessi e con gli altri) non viene mai detto dal narratore. Sta nelle regole: nell'aiuto che dipende dalla gentilezza, nella cupola che si apre con più mani, nelle targhette di Ottavio che parlano di tubi, note e tessere. Un ragazzo di nove anni rifiuta la morale, ma impara le regole di un mondo che gli piace.
 
 ---
 
@@ -132,9 +136,21 @@ Licenza compatibile (MIT o CC0), funziona offline, ha comandi touch, permette di
 Un gioco dentro il gioco vale quanto il più curato tra quelli accanto: se uno sembra un videogioco vero e l'altro una prova tecnica, il secondo smette di essere rinforzante e la regia non è più credibile. Prima di aggiungere un gioco interno lo si confronta, schermata accanto a schermata, con il migliore già presente. Lista di controllo: un cielo e un orizzonte (mai uno sfondo a tinta unita); un terreno con texture e variazioni di colore; una luce con una direzione, calda da una parte e fredda dall'altra, con ombre; vita nella scena (pubblico, bandiere, palloncini, polvere); un effetto per ogni evento importante (scoppio, anello, lampo, tabellone che si aggiorna); un'interfaccia da trasmissione sportiva, con nomi, punteggio e tempo. Vale anche per gli oggetti della stanza che fanno da gioco, come il sacco da boxe: materiali veri, struttura credibile, un effetto a ogni colpo.
 *Dove:* `js/giochi/arena.js`, `js/giochi/blaster.js`, il sacco in `stanza.js` (`saccoColpo`).
 
-### 2.12 Gli enigmi sono piccoli giochi veri, con un limite ai tentativi a caso
-Codice di simboli, circuito da ricollegare, lucchetto a combinazione: ognuno si gioca davvero. Per non trasformare un enigma difficile in un gioco di fortuna, tre tentativi sbagliati bloccano il pannello per qualche secondo, come le serrature vere. L'indizio è sia sul cartello nel mondo sia nel pannello.
-*Dove:* `giochi/leone/js/enigmi.js`.
+### 2.12 Gli enigmi sono piccoli giochi veri, di tipi diversi
+Codice di simboli (attenzione), tubi da girare (logica), carillon da ripetere (memoria), mosaico da ricomporre (visuospaziale): ognuno si gioca davvero e allena una cosa diversa. Ogni enigma ha una versione facile e una in cui manca un pezzo che ha solo il custode; l'aiuto ha due gradi (`sblocca(false)` dà il pezzo, `sblocca(true)` aggiunge un suggerimento). Per non trasformare un enigma difficile in un gioco di fortuna, tre codici sbagliati bloccano il pannello per qualche secondo.
+*Dove:* `giochi/parco/js/enigmi.js`.
+
+### 2.13 Una trama con un mistero, raccontata a pezzi
+Un luogo chiuso da trent'anni, una chiave, un biglietto, un inventore: il giocatore va avanti per sapere cosa c'è nella cupola. Ogni cancello aperto lascia una targhetta con una frase di Ottavio; ogni custode aggiunge un ricordo (la chiave inglese era sua, la melodia la fischiettava lui, la tessera l'ha affidata a un amico). Il finale cambia con le scelte fatte, e dà un motivo per rigiocare.
+*Dove:* `TAPPE`, `finale` in `main.js`; `rivelaPieno` in `enigmi.js`.
+
+### 2.14 La musica dice come sta il protagonista
+Una marcetta orchestrale allegra (pizzicati, flauto, campanelle) e la sua versione in minore, lenta e grave (archi bassi, timpano), suonano sulla stessa griglia e si mescolano in base alla frustrazione: sopra il giallo l'allegra si spegne, la cupa cresce e il tempo rallenta. È generata dal browser nota per nota, senza file audio, quindi funziona anche nell'anteprima e non pesa. Si abbassa quando qualcuno parla.
+*Dove:* `giochi/parco/js/musica.js`.
+
+### 2.15 Voci
+La voce è quella del dispositivo: si sceglie da sola la voce italiana migliore installata (quelle "naturali", "neurali", "premium" o "enhanced"), parla un po' più piano, una frase alla volta, e ogni personaggio ha la sua altezza. Per una voce davvero da attore servono file audio registrati o generati: il testo è già tutto in `main.js` ed `enigmi.js`, pronto per essere doppiato.
+*Dove:* `speak` in `giochi/parco/js/core.js`, `tono` in `main.js`.
 
 ---
 
@@ -216,8 +232,8 @@ Cielo, terreno, luci, pubblico ed effetti stanno in un modulo a parte che restit
 *Dove:* `js/giochi/arena.js` (`costruisciArena`, `metti` con `centra`), `geoSacco` in `stanza.js`.
 
 ### 3.19 Un nuovo gioco copia i moduli riutilizzabili
-"Il leone e il caos" è una cartella a sé (`giochi/leone`) con le sue copie di `assets.js`, `personaggio.js`, `volto.js`, `persone.js`, di Three.js e del personaggio: si pubblica e si prova da sola. `rabbia.js` diventa `frustrazione.js` cambiando solo nomi delle zone e segnali del corpo: il motore (base, picco, zone, tetto) è lo stesso. `core.js` cambia impostazioni e chiave di salvataggio, così i dati dei due giochi non si mescolano. Quando i giochi saranno tre o più conviene spostare questi moduli in una cartella comune.
+"Il segreto del parco" è una cartella a sé (`giochi/parco`) con le sue copie di `assets.js`, `personaggio.js`, `volto.js`, `persone.js`, di Three.js e del personaggio: si pubblica e si prova da sola. `rabbia.js` diventa `frustrazione.js` cambiando solo nomi delle zone e segnali del corpo: il motore (base, picco, zone, tetto) è lo stesso. `core.js` cambia impostazioni e chiave di salvataggio, così i dati dei due giochi non si mescolano. Quando i giochi saranno tre o più conviene spostare questi moduli in una cartella comune.
 
-### 3.20 Animali fatti con forme semplici
-Il leone è costruito con sfere e capsule: nessun modello da scaricare, aspetto da cartone, animazioni scritte a mano (zampe che oscillano, coda, testa che annusa, ruggito buffo). Un gruppo per ogni parte che si muove, con il perno nel punto giusto.
-*Dove:* `giochi/leone/js/leone.js`.
+### 3.20 Edifici e arredi fatti con forme semplici
+Fontana, chiosco, giostra e cupola sono cilindri, coni e spicchi di sfera: nessun modello da scaricare. La calotta della cupola è divisa in cinque spicchi indipendenti, così il finale può aprirne quanti ne servono. I fiori delle aiuole sono una sola `InstancedMesh` colorata per istanza.
+*Dove:* `giochi/parco/js/parco.js`.

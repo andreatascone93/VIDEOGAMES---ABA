@@ -11,7 +11,7 @@ Uso: python3 strumenti/prepara-anteprima.py <cartella-di-uscita>
 import base64, json, os, shutil, struct, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, '..', '..', '..', 'anteprima-leone'))
+OUT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, '..', '..', '..', 'anteprima-parco'))
 SALTA_DIR = {'strumenti'}
 SALTA_EST = {'.fbx', '.patch', '.webmanifest'}
 VENDOR_ADDONS = ['loaders/GLTFLoader.js', 'utils/BufferGeometryUtils.js', 'utils/SkeletonUtils.js']
