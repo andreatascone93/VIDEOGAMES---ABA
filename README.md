@@ -6,7 +6,7 @@ Piccoli videogiochi da usare dentro un intervento di analisi del comportamento a
 
 | Gioco | Comportamento target | Stato |
 | --- | --- | --- |
-| [La cameretta di Francesco](giochi/cameretta/index.html) | Posare il tablet quando sale la rabbia e ritrovare la calma con un'altra attività (autoregolazione) | Prototipo 3D giocabile: cameretta e salone, partite vere al tablet con la rabbia in tempo reale, attività che calmano (musica, disegno, mamma, costruzioni), genitori, giochi premio |
+| [La cameretta di Francesco](giochi/cameretta/index.html) | Posare il tablet quando sale la rabbia e ritrovare la calma con un'altra attività (autoregolazione) | Prototipo 3D giocabile: cameretta e salone, partite vere al tablet con la rabbia in tempo reale, attività che calmano (musica, disegno, sacco da boxe, mamma, costruzioni), genitori, giochi premio |
 | [Il gioco della pausa](giochi/pausa/index.html) | Prima bozza 2D | Archiviata (troppo infantile per l'età target) |
 
 ## Come provarlo

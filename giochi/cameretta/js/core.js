@@ -5,14 +5,17 @@ export const DEFAULT_CFG = {
   sconfitte: 2,           // sconfitte consecutive che portano la rabbia in zona arancione
   respiri: 3,             // respiri a tempo di musica nell'attività "ascolta la musica"
   secondiAttivita: 25,    // durata minima delle altre attività che calmano (disegno)
-  saccoCalma: false,      // il sacco da boxe è anche una scelta per calmarsi (di base è solo un gioco premio)
+  saccoCalma: true,       // il sacco da boxe è anche una scelta per calmarsi, oltre che un gioco premio
   secondiPremio: 30, secondiBlaster: 40, secondiAiutoRitardato: 10,
   criterio: 80, sessioniCriterio: 3, voce: true, pin: '1234'
 };
-const STORE = 'giochiAba.cameretta.v2';
+const STORE = 'giochiAba.cameretta.v2', CFG_V = 2;
 export const db = (() => {
-  try { const d = JSON.parse(localStorage.getItem(STORE)); if (d && d.cfg) { d.cfg = { ...DEFAULT_CFG, ...d.cfg }; return d; } } catch (e) {}
-  return { cfg: { ...DEFAULT_CFG }, sessions: [] };
+  try { const d = JSON.parse(localStorage.getItem(STORE)); if (d && d.cfg) { d.cfg = { ...DEFAULT_CFG, ...d.cfg };
+      // versione 2 delle impostazioni: il sacco è anche una scelta per calmarsi; quelle salvate prima si allineano una volta sola
+      if (!(d.cfgV >= CFG_V)) { d.cfg.saccoCalma = true; d.cfgV = CFG_V; }
+      return d; } } catch (e) {}
+  return { cfg: { ...DEFAULT_CFG }, cfgV: CFG_V, sessions: [] };
 })();
 export function save() { try { localStorage.setItem(STORE, JSON.stringify(db)); } catch (e) {} }
 export const cfg = () => db.cfg;

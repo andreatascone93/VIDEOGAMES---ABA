@@ -11,7 +11,7 @@ const FIELDS = [
   ['sconfitte', 'Sconfitte che portano la rabbia in arancione (sale durante le partite)', 'number'],
   ['respiri', 'Respiri a tempo di musica (attività "ascolta la musica")', 'number'],
   ['secondiAttivita', 'Secondi dell\'attività "disegna"', 'number'],
-  ['saccoCalma', 'Sacco da boxe anche come scelta per calmarsi', 'select', [['false', 'No: solo gioco premio (consigliato)'], ['true', 'Sì']]],
+  ['saccoCalma', 'Sacco da boxe anche come scelta per calmarsi', 'select', [['true', 'Sì'], ['false', 'No: solo gioco premio']]],
   ['secondiPremio', 'Secondi del gioco premio (sacco)', 'number'],
   ['secondiBlaster', 'Secondi di una partita a Blaster Arena', 'number'],
   ['secondiAiutoRitardato', 'Secondi prima dell\'aiuto ritardato (liv. 3–4)', 'number'],

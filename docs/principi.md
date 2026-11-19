@@ -33,16 +33,16 @@ Posare il tablet è solo il primo anello. La calma non arriva stando fermi in un
 *Dove:* `apriScelte`, `scelta` in `main.js`; `c.calma(k)` in `js/attivita.js`.
 
 ### 1.7 Più alternative adeguate, di tipo diverso
-Una sola risposta corretta non generalizza. Le alternative coprono funzioni diverse: da solo (musica con le cuffie, disegno), comunicazione funzionale (dire alla mamma che si è arrabbiati, invece di urlarlo), gioco sociale (costruzioni a turno con altri bambini). Ogni occasione registra quale è stata scelta, così il terapista vede le preferenze e può lavorare su quelle evitate.
-*Dove:* `js/attivita.js` (`musica`, `disegno`, `mamma`, `costruzioni`), colonna "Attività scelte" in `js/terapista.js`.
+Una sola risposta corretta non generalizza. Le alternative coprono funzioni diverse: da solo (musica con le cuffie, disegno), movimento fisico (sacco da boxe), comunicazione funzionale (dire alla mamma che si è arrabbiati, invece di urlarlo), gioco sociale (costruzioni a turno con altri bambini). Ogni occasione registra quale è stata scelta, così il terapista vede le preferenze e può lavorare su quelle evitate.
+*Dove:* `js/attivita.js` (`musica`, `disegno`, `mamma`, `costruzioni`), `giocoSacco` in `main.js`, colonna "Attività scelte" in `js/terapista.js`.
 
 ### 1.8 Rinforzo immediato, multiplo e legato alla funzione
 Dopo l'attività arrivano subito: sollievo (la rabbia è scesa passo dopo passo, il viso è disteso), potere (XP, Forza, il personaggio cresce) e accesso ad attività ugualmente desiderabili (sacco da boxe, gara di kart vinta). Il tablet resta suo. I rinforzatori competono con la funzione del comportamento problema: movimento fisico (sacco) e voglia di vincere (gara).
 *Dove:* `calmaRitrovata`, `premio` in `main.js`.
 
-### 1.9 Sfogo fisico: premio, non strumento per calmarsi
-Il sacco da boxe è di base solo un gioco premio, a calma già ritrovata. Colpire qualcosa mentre si è arrabbiati rischia di mantenere la rabbia invece di ridurla (la ricerca sulla catarsi, per esempio Bushman 2002, va in questa direzione) e allena una risposta vicina a quella da ridurre. Il terapista può comunque offrirlo tra le scelte per calmarsi con l'impostazione `saccoCalma`: è una decisione clinica da prendere con il supervisore, non una scelta del gioco.
-*Dove:* `saccoCalma` in `core.js` e `terapista.js`, `giocoSacco({ calma })` in `main.js`.
+### 1.9 Lo sfogo fisico è una delle strade per calmarsi, con regole chiare
+Il sacco da boxe è tra le scelte dopo aver posato il tablet, oltre che un gioco premio. Dà alla spinta a colpire e a lanciare un bersaglio adatto: stessa energia, oggetto giusto, nessun danno. Per un ragazzo che ha bisogno di muoversi è un'alternativa facile da preferire alla porta e al tablet. Perché resti un modo di calmarsi e non di caricarsi, nella versione "calma" non ci sono combo né scritte di potenza, la durata è breve e la barra della rabbia scende colpo dopo colpo. Punto da tenere d'occhio con il supervisore: la ricerca sulla catarsi (per esempio Bushman 2002) segnala che colpire da arrabbiati può mantenere la rabbia. I dati mostrano quante volte viene scelto il sacco rispetto alle altre attività, e l'impostazione `saccoCalma` permette di toglierlo dalle scelte lasciandolo come premio.
+*Dove:* `saccoCalma` in `core.js` e `terapista.js`, `apriScelte` e `giocoSacco({ calma })` in `main.js`.
 
 ### 1.10 Conseguenze realistiche per i comportamenti problema, senza spettacolo
 Le conseguenze sono quelle di casa: arriva un genitore, dice due frasi brevi con voce calma, porta via il tablet. Porta sbattuta o urla: tablet tolto per il resto della giornata. Tablet lanciato: schermo rotto, niente tablet per qualche giorno. Continuare a giocare da arrabbiati porta a perdere ancora e a esplodere. In nessun caso arrivano XP, premi o sollievo: il personaggio resta arrabbiato. L'attenzione del genitore è breve e neutra, per non diventare essa stessa un rinforzo, e gli effetti restano più brevi e meno "divertenti" di quelli delle scelte adeguate.

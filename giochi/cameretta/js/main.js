@@ -524,7 +524,7 @@ function aiutoScelta(tipo, voce) {
   if (!S || !S.prova || busy) return;
   S.prova.aiuto = S.prova.aiuto === 'completo' ? 'completo' : tipo;
   Object.entries(attivi).forEach(([id, a]) => { if (a.buona) evidenzia(id, true); });
-  if (tipo === 'completo' && voce) speak(luogo === 'salone' ? N() + ' può parlare con la mamma o giocare con gli altri bambini.' : N() + ' può fare un\'altra cosa per calmarsi: ascoltare la musica, disegnare o andare in salone.');
+  if (tipo === 'completo' && voce) speak(luogo === 'salone' ? N() + ' può parlare con la mamma o giocare con gli altri bambini.' : N() + ' può fare un\'altra cosa per calmarsi: ascoltare la musica, disegnare' + (cfg().saccoCalma ? ', sfogarsi al sacco' : '') + ' o andare in salone.');
 }
 
 /* La scelta è fatta: si registra l'occasione e arrivano le conseguenze */
@@ -728,7 +728,7 @@ async function giocoSacco({ calma = false } = {}) {
   await vaiA(L.sacco);
   camera_('sacco'); caption(calma ? N() + ' si sfoga al sacco: tocca PUGNO o CALCIO. Colpo dopo colpo la rabbia scende.' : 'Allenamento al sacco: tocca PUGNO o CALCIO. Più ' + N() + ' è forte, più il sacco vola!', false);
   $('saccoHud').classList.add('active');
-  const T = Number(cfg().secondiPremio) || 30;
+  const T = calma ? Math.max(6, Math.round((Number(cfg().secondiAttivita) || 25) * (S.livello === 4 ? .7 : 1))) : Number(cfg().secondiPremio) || 30;
   let colpi = 0, t = T;
   $('sHits').textContent = 0; $('sTime').textContent = t; $('sPow').textContent = forza;
   let ultimo = 0;
