@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Il leone e il caos</title>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+<style>
+  :root { --ink: #eef3fb; --quiet: #9fb0c8; --panel: rgba(16, 22, 36, .82); --line: rgba(255,255,255,.12);
+    --verde: #3fcf7a; --giallo: #f5c534; --arancione: #f5862a; --rosso: #ef4545; --blu: #3b8cf0; --oro: #ffc94a; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; overflow: hidden; color: var(--ink);
+    background: radial-gradient(ellipse at 50% 35%, #3a4a6b 0%, #1a2236 60%, #0e1322 100%);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+  canvas#world { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  button { font-family: inherit; cursor: pointer; border: none; color: inherit; }
+  .hud { position: fixed; z-index: 5; pointer-events: none; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+
+  /* barra della rabbia */
+  #anger { top: 14px; left: 14px; padding: 10px 14px 12px; width: 250px; display: none; }
+  #anger .top { display: flex; justify-content: space-between; align-items: baseline; font-weight: 800; letter-spacing: .08em; font-size: 13px; color: var(--quiet); }
+  #anger .stato { font-size: 17px; letter-spacing: .02em; color: #fff; transition: color .4s; }
+  #anger .track { position: relative; height: 16px; border-radius: 5px; background: rgba(255,255,255,.1); margin-top: 8px; overflow: hidden; }
+  #anger .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 8%; border-radius: 5px; background: var(--verde); transition: background .4s; }
+  #anger .track i { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(10,14,26,.75); }
+  #anger.pulse .fill { animation: segpulse .8s ease-in-out infinite; }
+  @keyframes segpulse { 50% { filter: brightness(1.5); } }
+
+  #signals { top: 98px; left: 14px; width: 250px; padding: 10px 14px; display: none; border-left: 4px solid var(--arancione); }
+  #signals .t { font-size: 12px; font-weight: 800; letter-spacing: .1em; color: var(--quiet); margin-bottom: 6px; }
+  #signals .s { font-size: 18px; font-weight: 700; line-height: 1.45; display: flex; align-items: center; gap: 8px; animation: sigin .4s ease-out; }
+  #signals .s i { width: 9px; height: 9px; border-radius: 50%; background: var(--arancione); flex: none; }
+  @keyframes sigin { from { opacity: 0; transform: translateX(-10px); } }
+
+  #stats { top: 14px; right: 66px; padding: 8px 14px; display: none; gap: 16px; font-weight: 800; font-size: 17px; align-items: center; }
+  #stats .k { font-size: 11px; letter-spacing: .12em; color: var(--quiet); display: block; }
+  #stats .v { color: var(--oro); font-size: 20px; }
+  #objective { top: 14px; left: 50%; transform: translateX(-50%); padding: 8px 18px; font-weight: 700; font-size: clamp(15px, 2vw, 19px); display: none; max-width: 40vw; text-align: center; }
+  #objective::before { content: "OBIETTIVO"; display: block; font-size: 11px; letter-spacing: .14em; color: var(--oro); font-weight: 800; }
+  #caption { bottom: 16px; left: 50%; transform: translateX(-50%); width: min(820px, 92vw); padding: 14px 22px;
+    font-size: clamp(18px, 2.4vw, 24px); font-weight: 600; text-align: center; display: none; line-height: 1.4; }
+
+  .lbl { position: fixed; z-index: 4; transform: translate(-50%, -100%); background: var(--panel); border: 2px solid rgba(255,255,255,.35); color: #fff; border-radius: 12px; padding: 7px 14px;
+    font-weight: 800; font-size: clamp(14px, 1.8vw, 18px); white-space: nowrap; pointer-events: auto; display: none; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+  .lbl::after { content: ""; position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); border: 7px solid transparent; border-top-color: rgba(255,255,255,.35); border-bottom: 0; }
+  .lbl { margin-top: calc(var(--riga, 0) * -46px); }
+  .lbl.su::after { display: none; }
+  .lbl.hot { border-color: var(--verde); animation: pulse 1s ease-in-out infinite; }
+  /* fumetti di chi parla */
+  .fumetto { position: fixed; z-index: 5; transform: translate(-50%, -100%); max-width: min(360px, 44vw); background: #fff; color: #1b2538; border-radius: 16px; padding: 9px 15px 10px; font-weight: 700; font-size: clamp(15px, 1.9vw, 20px); line-height: 1.3;
+    box-shadow: 0 8px 22px rgba(0,0,0,.35); pointer-events: none; text-align: left; animation: fumin .25s ease-out; }
+  .fumetto b { display: block; font-size: 11px; letter-spacing: .12em; color: #7a879c; font-weight: 800; }
+  .fumetto::after { content: ""; position: absolute; left: 50%; bottom: -9px; margin-left: -9px; border: 9px solid transparent; border-top-color: #fff; border-bottom: 0; }
+  @keyframes fumin { from { opacity: 0; transform: translate(-50%, -90%) scale(.9); } }
+  /* dissolvenza per i cambi di stanza e i salti di tempo */
+  #fade { position: fixed; inset: 0; z-index: 12; background: #05070d; opacity: 0; pointer-events: none; transition: opacity .45s; display: flex; align-items: center; justify-content: center; }
+  #fade.active { opacity: 1; pointer-events: auto; }
+  #fade span { font-size: clamp(26px, 4.5vw, 46px); font-weight: 900; letter-spacing: .04em; color: #eef3fb; }
+  /* battute tra cui scegliere quando Francesco parla */
+  #dialogo { position: fixed; z-index: 8; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(760px, 94vw); display: none; flex-direction: column; gap: 10px; }
+  #dialogo.active { display: flex; }
+  #dialogo .t { font-size: 12px; font-weight: 800; letter-spacing: .14em; color: var(--oro); text-align: center; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  .batt { background: #fff; color: #1b2538; border-radius: 14px; padding: 13px 18px; font-size: clamp(16px, 2.1vw, 21px); font-weight: 700; text-align: left; box-shadow: 0 6px 0 #b8c2d3, 0 12px 24px rgba(0,0,0,.35); }
+  .batt:active { transform: translateY(3px); box-shadow: 0 3px 0 #b8c2d3; }
+  .lbl.hot::after { border-top-color: var(--verde); }
+  @keyframes pulse { 50% { transform: translate(-50%, -100%) scale(1.1); box-shadow: 0 0 0 6px rgba(63,207,122,.35), 0 6px 18px rgba(0,0,0,.35); } }
+  #flash { position: fixed; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(circle, transparent 35%, rgba(239,69,69,.6)); opacity: 0; transition: opacity .35s; }
+  #toast { position: fixed; z-index: 6; left: 50%; top: 30%; transform: translate(-50%, -50%); font-size: clamp(30px, 5vw, 54px); font-weight: 900; color: var(--oro);
+    text-shadow: 0 3px 0 rgba(0,0,0,.4), 0 0 24px rgba(255,201,74,.5); pointer-events: none; opacity: 0; letter-spacing: .02em; white-space: nowrap; }
+
+  .overlay { position: fixed; inset: 0; z-index: 10; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+  .overlay.active { display: flex; }
+  #home, #end, #loading { background: linear-gradient(180deg, rgba(10,14,26,.55), rgba(10,14,26,.88)); }
+  h1 { font-size: clamp(30px, 5.5vw, 58px); margin: 6px 0; letter-spacing: .01em; font-weight: 900; text-shadow: 0 4px 0 rgba(0,0,0,.3); }
+  .kicker { font-size: 13px; letter-spacing: .3em; color: var(--oro); font-weight: 800; }
+  .lead { font-size: clamp(17px, 2.3vw, 22px); color: #c9d5e8; max-width: 720px; margin: 6px 0 22px; line-height: 1.45; }
+  .big { font-size: clamp(20px, 2.8vw, 28px); font-weight: 900; letter-spacing: .06em; padding: 15px 44px; border-radius: 14px; color: #10203a;
+    background: linear-gradient(180deg, #ffd96a, #f5b82e); box-shadow: 0 6px 0 #b9831a, 0 12px 26px rgba(0,0,0,.35); }
+  .big:active { transform: translateY(4px); box-shadow: 0 2px 0 #b9831a; }
+  .big.alt { background: linear-gradient(180deg, #6fe39f, #34b86a); box-shadow: 0 6px 0 #1f7d47, 0 12px 26px rgba(0,0,0,.35); }
+  .big.ghost { background: rgba(255,255,255,.1); color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,.35); }
+  #bar { width: min(420px, 70vw); height: 10px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; margin-top: 18px; }
+  #bar div { height: 100%; width: 0; background: var(--oro); transition: width .2s; }
+  #gear { position: fixed; top: 14px; right: 14px; z-index: 11; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; width: 42px; height: 42px; font-size: 20px; color: #fff; }
+
+  /* area terapista */
+  #therapist { justify-content: flex-start; overflow-y: auto; background: #f4f7fb; color: #23324a; align-items: stretch; text-align: left; padding: 20px 28px; z-index: 20; }
+  #therapist > * { flex-shrink: 0; }
+  #therapist h2 { margin: 18px 0 8px; font-size: 22px; }
+  .form { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px 24px; }
+  .form label { display: flex; flex-direction: column; font-size: 15px; color: #5b6b82; gap: 4px; }
+  .form input, .form select { font-size: 18px; padding: 8px; border-radius: 8px; border: 1px solid #c9d6e3; font-family: inherit; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; background: #fff; }
+  th, td { border-bottom: 1px solid #e3e9f0; padding: 8px; text-align: left; }
+  th { background: #eef3f8; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; align-items: center; }
+  .small { font-size: 16px; padding: 10px 18px; border-radius: 10px; background: #3b82c4; color: #fff; font-weight: 700; }
+  .small.grey { background: #8a97a8; } .small.red { background: #e04848; }
+  .note { font-size: 14px; color: #5b6b82; }
+  .advice { background: #fff8d9; border: 1px solid #f0dc8c; padding: 10px 14px; border-radius: 10px; font-size: 16px; }
+  #chart { background: #fff; border: 1px solid #e3e9f0; border-radius: 8px; width: 100%; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 50; color: #23324a; }
+  .modal.active { display: flex; }
+  .modal .box { background: #fff; padding: 24px; border-radius: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 280px; }
+  .modal input { font-size: 28px; text-align: center; padding: 8px; letter-spacing: 8px; }
+
+
+  /* il leone alle spalle */
+  #leoneHud { top: 14px; right: 66px; margin-top: 64px; padding: 8px 14px 10px; width: 230px; display: none; }
+  #leoneHud .top { display: flex; justify-content: space-between; font-weight: 800; letter-spacing: .08em; font-size: 13px; color: var(--quiet); }
+  #leoneHud .track { height: 12px; border-radius: 5px; background: rgba(255,255,255,.1); margin-top: 7px; overflow: hidden; }
+  #leoneHud .fill { height: 100%; width: 0; background: linear-gradient(90deg, #e0a64a, #f5862a); border-radius: 5px; }
+  #leoneHud.vicino .fill { animation: segpulse .6s ease-in-out infinite; }
+  #leoneHud .top b { color: #e0a64a; }
+  #attesa { position: fixed; z-index: 8; top: 40%; left: 50%; transform: translate(-50%, -50%); padding: 12px 22px; font-size: 24px; font-weight: 800; display: none; }
+
+  /* il pannello del cancello: a destra, Andrea resta visibile a sinistra */
+  #pannello { left: auto; right: 2vw; top: 3vh; bottom: 3vh; width: 62vw; padding: 0; z-index: 9; align-items: stretch; justify-content: flex-start; text-align: left; }
+  #pannello .cornice { display: flex; flex-direction: column; height: 100%; border-radius: 24px; padding: 16px 18px; gap: 12px;
+    background: linear-gradient(160deg, #3b4556, #1d2430); box-shadow: 0 0 0 3px #59657a, 0 26px 60px rgba(0,0,0,.6); }
+  #pannello .testa { display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 14px; letter-spacing: .14em; color: #ffd36a; }
+  #pannello .corpo { flex: 1; display: flex; gap: 16px; min-height: 0; }
+  #pIndizioBox { width: 34%; display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: .12em; color: var(--quiet); }
+  #pIndizio { width: 100%; border-radius: 10px; box-shadow: 0 6px 16px rgba(0,0,0,.4); }
+  #pEnigma { flex: 1; background: #0e1522; border-radius: 16px; padding: 14px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 2px #2c3a50; }
+  #pannello.rotto #pEnigma { opacity: .35; pointer-events: none; filter: grayscale(1); }
+  #pannello .azioni { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .azione { position: relative; padding: 12px 8px; border-radius: 12px; font-size: clamp(13px, 1.5vw, 17px); font-weight: 900; color: #fff; background: rgba(16,22,36,.92);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 6px 16px rgba(0,0,0,.3); }
+  .azione:active { transform: translateY(2px); }
+  .azione.hot { box-shadow: inset 0 0 0 3px var(--verde), 0 0 0 6px rgba(63,207,122,.3); animation: posapulse 1s ease-in-out infinite; }
+  .azione.freccia::before { content: "▼"; position: absolute; left: 50%; top: -36px; margin-left: -12px; font-size: 26px; color: var(--verde); animation: giu .7s ease-in-out infinite alternate; }
+  @keyframes posapulse { 50% { transform: scale(1.05); } }
+  @keyframes giu { to { transform: translateY(8px); } }
+  body.inpannello #caption { left: 14px; transform: none; width: min(33vw, 300px); font-size: 16px; text-align: left; bottom: 86px; }
+  body.inpannello #objective, body.inpannello #stats { opacity: 0; }
+  body.inpannello #leoneHud { right: auto; left: 14px; top: auto; bottom: 14px; margin: 0; width: min(33vw, 260px); }
+  body.inpannello #anger, body.inpannello #signals { width: 33vw; max-width: 260px; }
+
+  /* enigmi */
+  .enigma { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+  .en-tit { font-size: clamp(15px, 1.8vw, 19px); font-weight: 800; color: #cfe0ff; }
+  .en-msg { min-height: 1.4em; font-size: clamp(14px, 1.6vw, 18px); font-weight: 800; color: #9fb0c8; text-align: center; }
+  .en-msg.ok { color: var(--verde); } .en-msg.ko { color: #ff7a7a; }
+  .en-codice { display: flex; gap: 10px; }
+  .en-slot { width: 64px; height: 64px; border-radius: 12px; background: #1a2433; box-shadow: inset 0 0 0 2px #33445c; display: flex; align-items: center; justify-content: center; }
+  .en-slot.on { box-shadow: inset 0 0 0 2px #4dabff; }
+  .en-tasti { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .en-tasto { width: clamp(64px, 8vw, 84px); height: clamp(64px, 8vw, 84px); border-radius: 14px; background: #263246; box-shadow: 0 5px 0 #121a26; display: flex; align-items: center; justify-content: center; }
+  .en-tasto:active { transform: translateY(4px); box-shadow: 0 1px 0 #121a26; }
+  .en-griglia { display: grid; grid-template-columns: 34px repeat(3, clamp(70px, 9vw, 100px)) 34px; grid-template-rows: repeat(3, clamp(70px, 9vw, 100px)); gap: 4px; align-items: center; }
+  .en-pezzo { width: 100%; height: 100%; padding: 0; background: none; }
+  .en-pezzo svg { width: 100%; height: 100%; display: block; }
+  .en-capo { font-size: 24px; text-align: center; }
+  .en-capo.in { grid-row: 2; grid-column: 1; } .en-capo.out { grid-row: 3; grid-column: 5; opacity: .5; } .en-capo.out.on { opacity: 1; }
+  .en-ruote { display: flex; gap: 14px; }
+  .en-ruota { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .en-ruota button { width: 70px; height: 46px; border-radius: 10px; background: #263246; font-size: 20px; box-shadow: 0 4px 0 #121a26; }
+  .en-ruota .n { width: 70px; height: 84px; border-radius: 12px; background: linear-gradient(#cfd6e0, #fff 40%, #fff 60%, #cfd6e0); color: #1b2538; font-size: 52px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+  .en-apri { padding: 12px 40px; border-radius: 12px; font-size: 20px; font-weight: 900; background: linear-gradient(180deg, #ffd96a, #f5b82e); color: #10203a; box-shadow: 0 5px 0 #b9831a; }
+  @media (max-aspect-ratio: 1/1) {
+    #pannello { left: 2vw; right: 2vw; width: auto; top: 30vh; bottom: 2vh; }
+    #pannello .corpo { flex-direction: column; } #pIndizioBox { width: 100%; flex-direction: row; } #pIndizio { width: 40%; }
+    body.inpannello #caption { width: 60vw; left: 38vw; top: 14px; bottom: auto; }
+    #pannello .azioni { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<canvas id="world"></canvas>
+
+<div class="hud panel" id="anger"><div class="top"><span>FRUSTRAZIONE</span><span class="stato" id="angerState">Tranquillo</span></div>
+  <div class="track"><div class="fill" id="angerFill"></div><i style="left:20%"></i><i style="left:40%"></i><i style="left:60%"></i><i style="left:80%"></i></div></div>
+<div class="hud panel" id="signals"></div>
+<div class="hud panel" id="stats"><div><span class="k">XP</span><span class="v" id="sXp">0</span></div><div><span class="k">SQUADRA</span><span class="v" id="sSquadra">0</span></div></div>
+<div class="hud panel" id="leoneHud"><div class="top"><span>ROCCO SI AVVICINA</span><b>🦁</b></div><div class="track"><div class="fill" id="leoneFill"></div></div></div>
+<div class="hud panel" id="objective"></div>
+<div class="hud panel" id="caption"></div>
+<div class="panel" id="attesa"></div>
+<div id="flash"></div>
+<div id="toast"></div>
+<div id="labels"></div>
+<div id="dialogo"></div>
+<div id="fade"><span></span></div>
+
+<button id="gear" aria-label="Area terapista">⚙</button>
+
+<section class="overlay active" id="loading">
+  <div class="kicker">CARICAMENTO</div>
+  <h1 id="loadTitle">Il leone e il caos</h1>
+  <div id="bar"><div></div></div>
+</section>
+
+<section class="overlay" id="home">
+  <div class="kicker">UNA STORIA DA GIOCARE</div>
+  <h1>Il leone e il caos</h1>
+  <p class="lead" id="homeLead"></p>
+  <button class="big" id="startBtn">GIOCA</button>
+</section>
+
+<section class="overlay" id="pannello">
+  <div class="cornice">
+    <div class="testa"><span id="pTitolo">Cancello</span><span>PANNELLO DI CONTROLLO</span></div>
+    <div class="corpo">
+      <div id="pIndizioBox">IL CARTELLO ACCANTO AL CANCELLO<canvas id="pIndizio" width="512" height="326"></canvas></div>
+      <div id="pEnigma"></div>
+    </div>
+    <div class="azioni">
+      <button class="azione" id="bAiuto">Chiedi aiuto</button>
+      <button class="azione" id="bMolla">Lascio perdere</button>
+      <button class="azione" id="bColpisci">Colpisci il pannello</button>
+      <button class="azione" id="bVia">Allontanati</button>
+    </div>
+  </div>
+</section>
+
+<section class="overlay" id="end">
+  <div class="kicker">FINE DELLA SESSIONE</div>
+  <h1>Tutti sul pullman!</h1>
+  <p class="lead" id="endLead"></p>
+  <button class="big" id="endBtn">TORNA AL MENU</button>
+</section>
+<section class="overlay" id="therapist">
+  <div class="row" style="justify-content:space-between">
+    <h1 style="font-size:28px;text-shadow:none">Area terapista</h1>
+    <button class="small grey" id="closeTher">Chiudi</button>
+  </div>
+  <h2>Impostazioni della prossima sessione</h2>
+  <div class="form" id="form"></div>
+  <div class="row"><button class="small" id="saveCfg">Salva impostazioni</button><span class="note" id="savedNote"></span></div>
+  <h2>Andamento</h2>
+  <div id="advice"></div>
+  <svg id="chart" viewBox="0 0 760 220"></svg>
+  <p class="note">Percentuale di enigmi bloccati in cui il giocatore chiede aiuto da solo, senza aiuto programmato (livelli 2–4). Linea tratteggiata: criterio di padronanza.</p>
+  <h2>Sessioni</h2>
+  <div id="sessTable"></div>
+  <div class="row">
+    <button class="small" id="exportCsv">Esporta CSV</button>
+    <button class="small grey" id="copyCsv">Copia dati</button>
+    <button class="small red" id="clearData">Cancella tutti i dati</button>
+    <span class="note" id="copyNote"></span>
+  </div>
+  <p class="note">I dati restano solo su questo dispositivo. Non inserire il nome reale del bambino se diverso da quello del personaggio.</p>
+</section>
+
+<div class="modal" id="pinModal"><div class="box">
+  <strong>PIN terapista</strong>
+  <input id="pinInput" type="password" inputmode="numeric" maxlength="6">
+  <span class="note" id="pinMsg"></span>
+  <div class="row"><button class="small" id="pinOk">Entra</button><button class="small grey" id="pinCancel">Annulla</button></div>
+</div></div>
+<div class="modal" id="confirmModal"><div class="box">
+  <strong>Cancellare tutte le sessioni registrate?</strong>
+  <div class="row"><button class="small red" id="confirmYes">Sì</button><button class="small grey" id="confirmNo">No</button></div>
+</div></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

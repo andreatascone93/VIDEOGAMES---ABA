@@ -7,6 +7,7 @@ Piccoli videogiochi da usare dentro un intervento di analisi del comportamento a
 | Gioco | Comportamento target | Stato |
 | --- | --- | --- |
 | [La cameretta di Francesco](giochi/cameretta/index.html) | Posare il tablet quando sale la rabbia e ritrovare la calma con un'altra attività (autoregolazione) | Prototipo 3D giocabile: casa da girare liberamente (cameretta e salone uniti da una porta vera), partite vere al tablet con la rabbia in tempo reale, attività che calmano (musica, disegno, sacco da boxe, mamma, costruzioni), genitori, giochi premio |
+| [Il leone e il caos](giochi/leone/index.html) | Chiedere aiuto quando un compito è troppo difficile, invece di lasciar perdere (comunicazione funzionale) | Prototipo 3D giocabile: zoo dopo un blackout, tre cancelli con enigmi (codice, circuito, lucchetto), Rocco il leone che si avvicina, tre aiutanti diversi, frustrazione in tempo reale |
 | [Il gioco della pausa](giochi/pausa/index.html) | Prima bozza 2D | Archiviata (troppo infantile per l'età target) |
 
 ## Come provarlo
@@ -14,8 +15,8 @@ Piccoli videogiochi da usare dentro un intervento di analisi del comportamento a
 Il gioco va aperto da un indirizzo web, non con doppio clic sul file (i moduli JavaScript non si caricano da `file://`). Tre modi:
 
 - il link pubblicato dell'anteprima;
-- GitHub Pages su questo repository (Impostazioni → Pages → ramo `main`), poi `.../giochi/cameretta/`;
-- in locale: `cd giochi/cameretta && python3 -m http.server 8000`, poi apri `http://localhost:8000`.
+- GitHub Pages su questo repository (Impostazioni → Pages → ramo `main`), poi `.../giochi/cameretta/` o `.../giochi/leone/`;
+- in locale: `cd giochi/cameretta && python3 -m http.server 8000` (o `giochi/leone`), poi apri `http://localhost:8000`.
 
 Meglio su tablet, in orizzontale. Tutto il necessario è nella cartella (Three.js, modelli, Kart Royale): una volta caricato non serve connessione. I dati restano solo sul dispositivo.
 

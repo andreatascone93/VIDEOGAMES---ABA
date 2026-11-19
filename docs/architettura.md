@@ -76,4 +76,37 @@ Dati: ogni occasione registra tipo (`indipendente`, `con_aiuto`, `anticipata`, `
 | `kart-royale/` | Kart Royale compilato con la modalità ABA |
 | `strumenti/` | convertitore del personaggio, visualizzatore di modelli, preparazione dell'anteprima |
 
+## Il leone e il caos (3D)
+
+Gioco 3D in Three.js nella cartella `giochi/leone`, con le sue copie dei moduli riutilizzabili. Il protagonista (Andrea, nome modificabile) è in gita allo zoo: un temporale fa saltare la corrente, i recinti si aprono e Rocco, un leone goffo e insistente, vuole il panino nel suo zaino. Per arrivare al pullman bisogna aprire tre cancelli, ognuno con un enigma sul pannello di controllo e un aiutante vicino (Luca, compagno di classe; Bruno, il custode; Elena, la maestra).
+
+### Contingenze
+
+| Voce | Nel gioco |
+| --- | --- |
+| MO | enigma che da soli non si risolve (indizio coperto dal fango, pezzo fissato con una vite) e leone che si avvicina col tempo |
+| SD | frustrazione in zona arancione (60 su 100) dopo almeno un tentativo sbagliato, con l'aiutante in vista |
+| Risposta target | chiedere aiuto all'aiutante in modo specifico, dal pannello ("Chiedi aiuto a…") o andando da lui ("Parla con…") |
+| Rinforzo | l'aiutante dà proprio quello che manca e lascia finire; il leone si ferma; il cancello si apre; +100 XP; l'aiutante entra nella squadra |
+| Risposte problema | lasciar perdere (panchina o pulsante), colpire il pannello, provare a caso finché arriva il leone |
+| Conseguenze | il leone prende lo zaino e la zona ricomincia; il pannello colpito si blocca 8 secondi; niente XP |
+
+Forma della richiesta: specifica (aiuto subito), generica (l'aiutante chiede che cosa serve), pretesa (l'aiutante chiede di dirlo in un altro modo). Enigmi facili: si risolvono da soli (+60 XP); chiedere aiuto lì porta solo un incoraggiamento.
+
+Livelli: 1 modeling (Andrea chiede aiuto da solo), 2 aiuto completo (pulsante e aiutante lampeggiano, freccia, voce, frase specifica per prima) o parziale, 3 aiuto ritardato, 4 l'aiutante arriva dopo qualche secondo e il leone è più veloce (tolleranza all'attesa).
+
+Dati per ogni enigma: tipo (`indipendente`, `anticipata`, `con_aiuto`, `prima_di_provare`, `problema`, `modello_osservato`, `da_solo`), forma della prima richiesta, da dove è partita, latenza dall'arancione, frustrazione, errori, colpi al pannello, attesa, esito, tempo. Più l'elenco di tutte le richieste, anche quelle sugli enigmi facili.
+
+### File
+
+| File | Ruolo |
+| --- | --- |
+| `index.html` | interfaccia (HUD, pannello del cancello, frasi, area terapista) |
+| `js/main.js` | storia, contingenze, leone, aiutanti, aiuti programmati, esiti, camera |
+| `js/enigmi.js` | i tre enigmi in versione facile e difficile |
+| `js/zoo.js` | viale, cancelli, pannelli, cartelli, recinti, alberi, pullman |
+| `js/leone.js` | Rocco, fatto con forme semplici e animato a mano |
+| `js/frustrazione.js` | la frustrazione continua (stesso motore della rabbia) |
+| `js/core.js`, `assets.js`, `personaggio.js`, `volto.js`, `persone.js`, `terapista.js` | moduli comuni copiati dalla cameretta |
+
 I principi riutilizzabili sono in [principi.md](principi.md).
