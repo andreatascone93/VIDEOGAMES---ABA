@@ -553,4 +553,4 @@ requestAnimationFrame(loop);
 carica().then(() => {
   overlay('loading', false); home();
   if (DEBUG) window.__app = { THREE, scene, camera, renderer, P, volto, room, tablet, L, tabMesh, setRabbia, siedi, alzati, cammina, vaiA, posaTablet, camera_, iniziaSessione, giocaAlTablet, momentoScelta, pausa, scelta, premio, prossimoCiclo, get S() { return S; }, get attivi() { return attivi; }, snap: () => snapCam = true, scegliOggetto, setTabStato: s => tabStato = s, sacco };
-}).catch(e => { $('loadTitle').textContent = 'Errore di caricamento'; console.error(e); });
+}).catch(e => { $('loadTitle').textContent = 'Errore di caricamento'; const d = document.createElement('p'); d.className = 'lead'; d.textContent = String(e && e.message || e); $('loading').appendChild(d); console.error(e); });
