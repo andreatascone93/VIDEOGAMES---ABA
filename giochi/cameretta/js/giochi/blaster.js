@@ -102,6 +102,8 @@ export async function avviaBlaster(box, { esito = 'vinci', durata = 40, nome = '
   max.root.position.set(2.5, .0, -2.3); max.root.rotation.y = Math.PI; scene.add(max.root);
   const armaMax = normalizza(await model('blaster/blaster-d.glb'), .5);
   { const mano = max.ossa.RightHand; mano.add(armaMax); armaMax.position.set(0, 0, 0); armaMax.rotation.set(0, 0, 0); armaMax.scale.setScalar(1);
+    // orienta il blaster nella direzione in cui guarda Max
+    max.root.updateMatrixWorld(true); const qm = mano.getWorldQuaternion(new THREE.Quaternion()).invert(); armaMax.quaternion.copy(qm.multiply(max.root.quaternion));
     max.root.updateMatrixWorld(true); const sz = new THREE.Box3().setFromObject(armaMax).getSize(new THREE.Vector3()); armaMax.scale.setScalar(.42 / Math.max(sz.x, sz.y, sz.z)); }
   max.play('idle');
 

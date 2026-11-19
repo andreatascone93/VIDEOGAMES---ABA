@@ -7,8 +7,11 @@ const loader = new GLTFLoader();
 const cache = new Map();
 export const BASE = new URL('../assets/', import.meta.url).href;
 
+// Nell'anteprima pubblicata i modelli sono glTF in formato .json (vedi strumenti/prepara-anteprima.py).
+const JSON_MODE = document.documentElement.dataset.modelli === 'json';
+const url = path => BASE + (JSON_MODE ? path.replace(/\.(glb|gltf)$/, '.json') : path);
 export function load(path) {
-  if (!cache.has(path)) cache.set(path, loader.loadAsync(BASE + path));
+  if (!cache.has(path)) cache.set(path, loader.loadAsync(url(path)));
   return cache.get(path);
 }
 /** Copia indipendente di un modello statico, con ombre attive. */

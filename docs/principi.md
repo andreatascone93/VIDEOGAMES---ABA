@@ -121,7 +121,7 @@ Mentre gira un gioco del tablet, la stanza si ridisegna un fotogramma su tre. Pi
 Playwright con swiftshader. Gli elementi che pulsano non sono mai "stabili": si usa `dispatchEvent('pointerdown')`. In modalità `?debug` la camera si può fissare all'istante. La fine delle gare di kart si simula con `postMessage`. La regia del kart si verifica facendo avanzare la simulazione con `race.update(ctx, 1/60)`, perché il rendering software è troppo lento.
 
 ### 3.11 Pubblicazione
-L'anteprima pubblicata blocca i download: per i dati serve il pulsante "Copia dati". Il salvataggio locale vale solo per quel dispositivo e quel browser.
+L'anteprima su claude.ai accetta solo alcuni tipi di file (html, js, css, json, png, jpg, txt): niente `.glb`, `.gltf` o `.bin`. `strumenti/prepara-anteprima.py` crea una copia con i modelli convertiti in glTF `.json` con i dati incorporati; `assets.js` li carica se `index.html` ha `data-modelli="json"`. L'anteprima blocca anche i download: per i dati serve il pulsante "Copia dati". Il salvataggio locale vale solo per quel dispositivo e quel browser.
 
 ### 3.12 Licenze e crediti
 Grafica: Kenney e KayKit (CC0). Kart Royale: MIT. Three.js: MIT. I file di licenza restano accanto agli asset.
