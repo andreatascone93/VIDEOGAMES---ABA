@@ -27,6 +27,8 @@ Personalizzazione per il primo caso: personaggio umano (Leo, nome modificabile),
 
 ## La cameretta di Francesco (3D)
 
+**Episodio 1 · Un pomeriggio a casa.** Francesco ha nove anni, ama le sfide e i giochi al tablet, e si arrabbia un po' troppo spesso. Il suo obiettivo, che attraversa gli episodi, è passare giornate più serene a casa e a scuola imparando a gestire i suoi momenti. Una narratrice lo presenta all'inizio, accompagna i momenti importanti e chiude l'episodio. Nell'episodio ci sono due fili: la pausa quando arriva la rabbia (tablet) e la richiesta di aiuto (la scatola degli enigmi di nonno Piero). Il terapista può tenerne uno solo con l'impostazione `percorso`.
+
 Gioco 3D in Three.js (moduli ES, nessuna compilazione). Francesco, personaggio animato Kenney, si muove liberamente nella sua casa: la cameretta e il salone sono affiancati e uniti da una porta vera, arredati con mobili KayKit e Kenney. Si tocca il pavimento per camminare (anche quello dell'altra stanza: Francesco ci va passando dalla porta), si tocca un oggetto o la sua etichetta per interagire. In casa ci sono anche la mamma, il papà e due bambini (Leo e Giulia).
 
 ### Contingenze
@@ -39,6 +41,23 @@ Gioco 3D in Three.js (moduli ES, nessuna compilazione). Francesco, personaggio a
 | Rinforzo | la calma torna poco a poco mentre fa l'attività; poi +100 XP, Forza +1, giochi premio; il tablet resta suo |
 | Risposte problema | sbattere la porta, lanciare il tablet, urlare, continuare a giocare fino a esplodere |
 | Conseguenze | arriva un genitore, due frasi calme, il tablet viene tolto; niente XP né premi; si riparte "il giorno dopo" |
+
+### Contingenze della richiesta di aiuto (la scatola del nonno)
+
+| Voce | Nel gioco |
+| --- | --- |
+| MO | una serratura a cui manca qualcosa che ha solo una persona di casa: due simboli coperti da una macchia (mamma), una vite da togliere (papà), una melodia suonata una volta sola e troppo in fretta (mamma), la tessera centrale del mosaico (Giulia) |
+| SD | Francesco è bloccato (almeno un tentativo andato male) e la rabbia è in arancione |
+| Risposta target | andare dalla persona giusta e chiedere, con gentilezza e dicendo di preciso che cosa serve; poi ringraziare |
+| Rinforzo | l'aiuto arriva: pieno (quello che manca più un suggerimento) se la richiesta è gentile e precisa, il minimo se è brusca. La serratura la apre lui. XP: 60 da solo, 100 con aiuto chiesto, +20 se chiesto con gentilezza |
+| Alternative | lasciar perdere; sbattere la scatola; rispondere male; chiedere senza aver provato; chiedere quando non serve |
+| Conseguenze | il regalo resta chiuso; la scatola si blocca 8 secondi e la rabbia sale, e continuando Francesco la rovescia: la mamma la mette via fino al giorno dopo; niente aiuto finché non chiede con calma; "prova prima una volta"; "questa la apri da solo" |
+
+Le serrature sono quattro, a difficoltà crescente: codice di simboli, circuito da ricollegare, carillon da ripetere, mosaico da ricomporre. Le ultime N (`difficili`, di base 2) non si aprono senza aiuto. Livelli: 1 modello (Francesco va a chiedere da solo, con le parole giuste, e il giocatore finisce l'enigma), 2 aiuto subito (il pulsante "Chiedi aiuto" pulsa; con l'aiuto completo anche freccia, voce e la frase gentile per prima), 3 aiuto in ritardo, 4 attesa dopo aver chiesto (`attesaAiuto` secondi). Aperta la quarta serratura il coperchio si alza: dentro c'è la lettera del nonno e due biglietti per la pista dei kart.
+
+L'episodio finisce quando le occasioni al tablet sono esaurite e la scatola è aperta. Se la scatola resta chiusa, dopo averci provato almeno una volta compare sul letto la scelta "Basta per oggi": la narratrice chiude dicendo che la scatola aspetta domani. Con una serratura in corso Francesco può alzarsi e andare al tablet: la serratura si registra come lasciata.
+
+Dati di ogni serratura: tipo (`indipendente`, `con_aiuto`, `anticipata`, `modello_osservato`, `da_solo`, `rinuncia`, `lasciato`, `problema`), forma della richiesta (gentile, brusca, scortese), grado dell'aiuto ricevuto, se ha ringraziato, latenza dall'SD alla richiesta, da dove ha chiesto (dalla scatola o andando dalla persona), errori, colpi alla scatola, respiri, risposte sgarbate, richieste prima di provare e non necessarie, secondi di attesa, tempo, esito.
 
 ### Storia
 
@@ -72,8 +91,15 @@ Dati: ogni occasione registra tipo (`indipendente`, `con_aiuto`, `anticipata`, `
 | `js/tablet.js` | menu dei giochi, partite con regia ed eventi, risultati |
 | `js/giochi/blaster.js` | Blaster Arena: regole, avversario, interfaccia |
 | `js/giochi/arena.js` | lo scenario di Blaster Arena: cielo, colline, campo, tribune con pubblico, tabellone, effetti dei colpi |
+| `js/testi.js` | tutti i testi: narratrice, battute, frasi tra cui scegliere, scritte; elenco delle frasi da registrare |
+| `js/narrazione.js` | la voce: registrazioni di `assets/voce`, riserva sulla voce del dispositivo, fumetti parlati |
+| `js/musica.js` | musica di sottofondo suonata dal browser, che segue la rabbia |
+| `js/aiuto.js` | la richiesta di aiuto: occasioni, aiuti programmati, dialoghi, esiti, dati |
+| `js/enigmi.js` | i quattro enigmi della scatola, in versione facile e difficile |
+| `js/scatola.js` | la scatola del nonno in 3D: serrature, coperchio, biglietto |
+| `assets/voce/` | le frasi registrate (MP3) e il loro indice |
 | `js/terapista.js` | area terapista |
 | `kart-royale/` | Kart Royale compilato con la modalità ABA |
-| `strumenti/` | convertitore del personaggio, visualizzatore di modelli, preparazione dell'anteprima |
+| `strumenti/` | convertitore del personaggio, visualizzatore di modelli, preparazione dell'anteprima, registrazione della voce (`genera-voce.py`, `frasi.mjs`) |
 
 I principi riutilizzabili sono in [principi.md](principi.md).

@@ -62,6 +62,25 @@ Cameretta, tablet, porta, salone, mamma, papà, altri bambini: gli stessi stimol
 ### 1.14 Etica e privacy
 Impostazioni protette da PIN; dati solo sul dispositivo; nessun nome reale del bambino; uso dentro un programma supervisionato, con consenso dei genitori e assenso del bambino. Le sconfitte programmate sono un'esposizione voluta: le decide il terapista. I genitori nel gioco fanno da modello anche per i genitori veri: poche parole, tono calmo, conseguenza coerente.
 
+### 1.15 Chiedere aiuto è una seconda abilità, con la sua contingenza
+Accanto alla pausa c'è un secondo filo: chiedere una mano invece di mollare o di prendersela con le cose. La contingenza è scritta come l'altra. MO: un compito a cui manca qualcosa che ha soltanto una persona di casa (un indizio coperto da una macchia, un cacciavite, una melodia da risentire, una tessera). SD: il protagonista è bloccato, cioè ha già provato almeno una volta senza riuscire, e la rabbia è in arancione. Risposta target: andare dalla persona giusta e chiedere, con gentilezza e dicendo di preciso che cosa serve. Rinforzo: l'aiuto arriva davvero, e la serratura la apre comunque lui: chi aiuta dà quello che manca, non la soluzione. Le alternative hanno conseguenze naturali: lasciar perdere (il regalo resta chiuso), sbattere la scatola (si blocca per qualche secondo e la rabbia sale), esplodere (la mamma la mette via fino a domani), rispondere male (niente aiuto finché non chiede con calma).
+Il gioco non dice mai "chiedi aiuto": lo fa solo l'aiuto programmato del livello. Il pulsante per chiedere è sempre presente, come quello per posare il tablet.
+*Dove:* `js/aiuto.js` (intestazione, `inizioSD`, `chiedi`, `dialogo`, `aiutoDato`, `molla`, `colpisci`, `rovescia`).
+
+### 1.16 La qualità della richiesta decide la qualità dell'aiuto
+Non basta chiedere: conta come. Il giocatore sceglie le parole del protagonista tra quattro forme. Gentile e precisa: aiuto pieno (quello che manca, più un suggerimento). Brusca ma precisa: il minimo indispensabile. Gentile ma vaga ("Mi aiuti, per favore?"): la persona domanda che cosa serve, e la richiesta va completata. Sgarbata: nessun aiuto, e la persona dice con calma come chiederlo. Dopo l'aiuto c'è una seconda scelta: ringraziare, non dire niente, o uno sgarbo. Così il rinforzo differenziale lavora su tre risposte distinte (chiedere, chiedere bene, ringraziare) e ognuna finisce nei dati.
+Le frasi tra cui scegliere compaiono in ordine casuale e hanno tutte lo stesso aspetto; solo l'aiuto completo del livello 2 mette per prima quella gentile.
+*Dove:* `dialogo`, `segnaRichiesta`, `aiutoDato` in `js/aiuto.js`; `RICHIESTA`, `RISPOSTE` in `js/testi.js`.
+
+### 1.17 Insegnare anche quando non chiedere
+Un'abilità di richiesta insegnata male diventa dipendenza dall'aiuto. Per questo la difficoltà cresce e non tutte le serrature hanno bisogno di qualcuno: le prime si aprono da soli, e chi chiede lo stesso si sente rispondere "questa la apri da solo" (richiesta non necessaria, registrata). Sulle serrature difficili, chi chiede prima di aver provato viene invitato a provare una volta (impostazione `provaPrima`). Il numero di serrature che richiedono aiuto è un parametro del terapista (`difficili`, da 0 a 4): si parte con poche occasioni e si aumenta. Al livello 4 l'aiuto non arriva subito: chi ha chiesto deve aspettare qualche secondo (tolleranza all'attesa, `attesaAiuto`).
+La rabbia qui segue la situazione: sale con gli errori e con il tempo passato bloccati, ma da sola si ferma all'arancione. Al rosso si arriva soltanto sbattendo la scatola: il primo colpo è un avvertimento, dal secondo si può esplodere.
+*Dove:* `difficile`, `update`, `dialogo` in `js/aiuto.js`; campi `difficili`, `provaPrima`, `attesaAiuto` in `js/terapista.js`.
+
+### 1.18 Due fili nello stesso episodio, dati separati
+Pausa e richiesta di aiuto convivono nello stesso pomeriggio, ma sono due programmi diversi: ogni occasione porta l'ambito (`aiuto` per la scatola, nessuno per il tablet), il grafico ha due linee, e il terapista può tenere un solo filo per volta (impostazione `percorso`). Mescolare le percentuali nasconderebbe proprio la cosa che serve vedere.
+*Dove:* `registra` in `js/aiuto.js`; `summary`, `summaryAiuto`, `tabellaAiuto` in `js/terapista.js`.
+
 ---
 
 ## 2. Principi di game design
@@ -93,7 +112,8 @@ Nessuna condizione di sconfitta, tempo breve (30 s), potenza che cresce con la F
 Il giocatore sceglie il gioco al tablet (corsa o sparatutto), l'attività per ritrovare la calma e il gioco premio. La scelta è essa stessa rinforzante e aumenta la motivazione.
 
 ### 2.8 Sessioni brevi
-Due o tre occasioni per sessione, 3–5 minuti ciascuna. Le partite durano circa 40–60 secondi (un giro di pista, una sfida a tempo), le attività circa 25 secondi (regolabili).
+Due o tre occasioni per sessione, 3–5 minuti ciascuna. Le partite durano circa 40–60 secondi (un giro di pista, una sfida a tempo), le attività circa 25 secondi (regolabili). Una sessione deve sempre poter finire: se un compito resta aperto (la scatola ancora chiusa), dopo almeno un tentativo il giocatore trova nel mondo la scelta "Basta per oggi", e la narratrice chiude senza rimproveri: la scatola aspetta domani. Nessun vicolo cieco, nemmeno per chi rinuncia. Quando c'è la scatola, anche la schermata finale dice il vero: "Missione completata" compare solo a scatola aperta; altrimenti il titolo è "Per oggi basta così", con il conto delle serrature aperte.
+*Dove:* `tempoLibero`, etichetta `basta` in `etichette`, `fineSessione` in `main.js`.
 
 ### 2.9 Accessibilità
 Narrazione vocale (italiano), didascalie grandi, fumetti con il nome di chi parla, pulsanti grandi per il tocco, layout pensato per tablet in orizzontale, comandi da tastiera per il computer.
@@ -108,6 +128,23 @@ Ogni persona della storia si riconosce a colpo d'occhio e "si comporta" come è 
 ### 2.11 Tutti i giochi interni allo stesso livello grafico
 Un gioco dentro il gioco vale quanto il più curato tra quelli accanto: se uno sembra un videogioco vero e l'altro una prova tecnica, il secondo smette di essere rinforzante e la regia non è più credibile. Prima di aggiungere un gioco interno lo si confronta, schermata accanto a schermata, con il migliore già presente. Lista di controllo: un cielo e un orizzonte (mai uno sfondo a tinta unita); un terreno con texture e variazioni di colore; una luce con una direzione, calda da una parte e fredda dall'altra, con ombre; vita nella scena (pubblico, bandiere, palloncini, polvere); un effetto per ogni evento importante (scoppio, anello, lampo, tabellone che si aggiorna); un'interfaccia da trasmissione sportiva, con nomi, punteggio e tempo. Vale anche per gli oggetti della stanza che fanno da gioco, come il sacco da boxe: materiali veri, struttura credibile, un effetto a ogni colpo.
 *Dove:* `js/giochi/arena.js`, `js/giochi/blaster.js`, il sacco in `stanza.js` (`saccoColpo`).
+
+### 2.12 Un episodio con una narratrice
+Il gioco si apre come un episodio: un cartello con il titolo, poi una voce che presenta il protagonista con quattro frasi brevi. Chi è, che cosa ama, che cosa gli pesa, che cosa vuole ottenere. Senza questo, la rabbia è solo una barra; con questo è la difficoltà di qualcuno a cui ci si è affezionati. La narratrice poi accompagna i momenti importanti e chiude l'episodio raccontando com'è andata e anticipando il prossimo.
+Tre regole di scrittura. La narratrice descrive fatti e stati ("la rabbia comincia a salire"), non dà ordini: dire che cosa fare spetta solo all'aiuto del livello. Non giudica il protagonista quando sbaglia: racconta la conseguenza. Parla poco: una frase per momento, e la presentazione si può saltare.
+*Dove:* `NARRA` in `js/testi.js`; `iniziaSessione`, `fineSessione` in `main.js`.
+
+### 2.13 Personaggi con un carattere
+Il protagonista ha un desiderio (le sfide), un difetto (si arrabbia in fretta) e un obiettivo che dura più episodi (giornate più serene, a casa e a scuola). Le altre persone reagiscono alle stesse situazioni ognuna a modo suo: la mamma calda e paziente, il papà asciutto e pratico, la sorellina diretta. Stesse contingenze, voci diverse: il giocatore impara che la richiesta fatta bene funziona con persone diverse, e la casa sembra abitata.
+*Dove:* `RISPOSTE` in `js/testi.js` (stesse chiavi per tre persone).
+
+### 2.14 La musica dice come sta il protagonista
+La musica di sottofondo ha due versioni dello stesso tema, una calma e una tesa, che si mescolano in base alla rabbia: lo stato si sente prima ancora di guardare la barra. Si abbassa quando qualcuno parla e tace quando sullo schermo c'è un gioco con i suoi suoni. Deve restare sotto la voce, sempre.
+*Dove:* `js/musica.js`.
+
+### 2.15 Enigmi a difficoltà crescente, con un indizio fisico
+Quattro enigmi di tipo diverso (codice di simboli, circuito, melodia da ripetere, mosaico), in ordine di difficoltà. L'indizio sta su un oggetto del mondo, il biglietto del nonno, e l'aiuto di una persona lo cambia in modo visibile: la macchia sparisce, sul biglietto compaiono le note. Il premio finale non sono punti: è una lettera e una cosa da fare insieme.
+*Dove:* `js/enigmi.js`, `js/scatola.js`, `finale` in `js/aiuto.js`.
 
 ---
 
@@ -131,6 +168,11 @@ Pagina web senza passaggi di compilazione per il gioco principale: `index.html` 
 | `tablet.js` | dispositivo nel gioco con partite vere, regia ed eventi in tempo reale | sì, per scenari con schermi |
 | `attivita.js` | attività alternative (musica, disegno, dialogo, costruzioni) | in parte: lo schema `calma(k)` sì |
 | `giochi/arena.js` | scenario all'aperto per i giochi interni: cielo, terreno, luci, pubblico, tabellone, effetti | sì, cambiando colori e oggetti |
+| `testi.js` | tutto quello che il gioco dice o scrive, e l'elenco delle frasi da registrare | lo schema sì, i testi no |
+| `narrazione.js` | voce registrata con riserva sulla voce del dispositivo, fumetti parlati, coda delle frasi | sì |
+| `musica.js` | musica procedurale a due strati che segue uno stato da 0 a 1 | sì |
+| `enigmi.js` | quattro enigmi autonomi con versione facile e difficile | sì |
+| `aiuto.js`, `scatola.js` | la richiesta di aiuto e l'oggetto che la motiva | lo schema sì (occasione, richiesta, aiuto graduato) |
 | `stanza.js`, `salone.js`, `main.js` | scene e storia di questo scenario | no, sono specifici (riusabili `pareteConPorta`, `porta`, `finestra`) |
 
 ### 3.3 Pipeline del personaggio
@@ -181,14 +223,35 @@ Mentre gira un gioco del tablet, la casa si ridisegna un fotogramma su tre. Pixe
 `camera.setViewOffset` sposta il personaggio nella striscia libera accanto al tablet senza cambiare prospettiva. Ogni momento della storia ha la sua inquadratura: stanza (inquadra la stanza in cui si trova il personaggio, scorre da una all'altra quando passa la porta e, vicino alla porta, si sposta verso la stanza accanto per mostrare dove si sta andando), scelta (fissa, tutte le opzioni in vista), viso, tablet, pausa, sacco, più inquadrature fisse per le attività e una larga sulla casa quando arriva un genitore.
 
 ### 3.15 Test automatici
-Playwright con swiftshader. Gli elementi che pulsano non sono mai "stabili": si usa `dispatchEvent('pointerdown')`. Si aspetta la schermata attiva, non l'esistenza di un pulsante: i pulsanti della schermata precedente restano nella pagina. In modalità `?debug` la camera si può fissare all'istante e `window.__app` espone lo stato. Per i passaggi di stanza si aspetta `luogo` (dove si trova il protagonista) e la proprietà `stanza` degli altri personaggi. Il kart si sostituisce con una pagina finta che manda gli stessi messaggi (`route` più `postMessage`), perché il rendering software è troppo lento per guidare davvero; la regia del kart si verifica facendo avanzare la simulazione con `race.update(ctx, 1/60)`.
+Playwright con swiftshader. Gli elementi che pulsano non sono mai "stabili": si usa `dispatchEvent('pointerdown')`. Si aspetta la schermata attiva, non l'esistenza di un pulsante: i pulsanti della schermata precedente restano nella pagina. In modalità `?debug` la camera si può fissare all'istante e `window.__app` espone lo stato. Per i passaggi di stanza si aspetta `luogo` (dove si trova il protagonista) e la proprietà `stanza` degli altri personaggi. Il kart si sostituisce con una pagina finta che manda gli stessi messaggi (`route` più `postMessage`), perché il rendering software è troppo lento per guidare davvero; la regia del kart si verifica facendo avanzare la simulazione con `race.update(ctx, 1/60)`. Per le prove `?intro=0` salta la presentazione; gli enigmi espongono `perTest()` (la soluzione) e le frasi tra cui scegliere hanno un attributo `data-k` con il loro tipo, così la prova non dipende dall'ordine casuale. Un'azione che apre un dialogo non va attesa dalla prova: la sua promessa si chiude solo a dialogo finito. Più browser senza scheda grafica in parallelo vanno tre volte più piano: una prova per volta.
 
 ### 3.16 Pubblicazione
-L'anteprima su claude.ai accetta solo alcuni tipi di file (html, js, css, json, png, jpg, txt): niente `.glb`, `.gltf` o `.bin`. `strumenti/prepara-anteprima.py` crea una copia con i modelli convertiti in glTF `.json` con i dati incorporati; `assets.js` li carica se `index.html` ha `data-modelli="json"`. L'anteprima blocca anche i download: per i dati serve il pulsante "Copia dati". Il salvataggio locale vale solo per quel dispositivo e quel browser.
+L'anteprima su claude.ai accetta solo alcuni tipi di file (html, js, css, json, png, jpg, txt): niente `.glb`, `.gltf` o `.bin`. `strumenti/prepara-anteprima.py` crea una copia con i modelli convertiti in glTF `.json` con i dati incorporati; `assets.js` li carica se `index.html` ha `data-modelli="json"`. Lo stesso vale per l'audio: le registrazioni della voce vengono raccolte in pochi pacchi `.json` (base64), nell'ordine della storia, e `narrazione.js` li scarica quando servono. L'anteprima blocca anche i download: per i dati serve il pulsante "Copia dati". Il salvataggio locale vale solo per quel dispositivo e quel browser.
 
 ### 3.17 Licenze e crediti
-Grafica: Kenney (Animated Characters, Furniture Kit) e KayKit (CC0). Kart Royale: MIT. Three.js: MIT. I file di licenza restano accanto agli asset.
+Grafica: Kenney (Animated Characters, Furniture Kit) e KayKit (CC0). Kart Royale: MIT. Three.js: MIT. I file di licenza restano accanto agli asset. Voce: registrata con Kokoro-82M (Apache-2.0), in locale; nel gioco finiscono solo i file audio prodotti.
 
 ### 3.18 Uno scenario condiviso per i giochi interni
 Cielo, terreno, luci, pubblico ed effetti stanno in un modulo a parte che restituisce poche funzioni (`punteggio`, `scoppio`, `anello`, `lampo`, `scia`, `esulta`, `aggiorna`): il gioco pensa alle regole, lo scenario alla resa. Un nuovo gioco interno riusa lo stesso scenario cambiando colori e oggetti. Tre lezioni dai modelli scaricati: il perno può stare in un angolo, quindi prima di ruotare un modello lo si ricentra sulla sua scatola; i posti del pubblico si trovano con raggi lanciati dall'alto sulla geometria vera, non indovinando le file dalle misure; le forme di rivoluzione (la capsula del sacco) distribuiscono la texture per numero di punti e non per altezza, quindi la coordinata verticale va ricalcolata dalla posizione.
 *Dove:* `js/giochi/arena.js` (`costruisciArena`, `metti` con `centra`), `geoSacco` in `stanza.js`.
+
+### 3.19 Tutti i testi in un solo modulo
+Quello che il gioco dice (narratrice, battute, frasi tra cui scegliere) e scrive (cartelli, obiettivi) sta in un modulo senza dipendenze dalla pagina. Tre vantaggi: il clinico può rileggere e correggere i testi senza toccare la logica; uno script può elencare tutte le frasi da registrare; un altro episodio riusa lo schema cambiando le parole. Le frasi sono funzioni, perché contengono il nome del protagonista.
+*Dove:* `js/testi.js` (`NARRA`, `SCRITTE`, `VOCI`, `RICHIESTA`, `tutteLeFrasi`), `strumenti/frasi.mjs`.
+
+### 3.20 Voce naturale registrata in anticipo, con una riserva
+Le frasi sono poche e note in anticipo: conviene registrarle una volta con una sintesi vocale di qualità che gira in locale, invece di affidarsi alla voce del dispositivo, che cambia da un tablet all'altro. Ogni frase diventa un file il cui nome è l'impronta di (chi parla + testo): se un testo cambia, quella frase resta senza registrazione e la legge la voce del dispositivo finché non si rilancia lo script, che registra solo le frasi nuove e toglie quelle non più usate.
+Lezioni. Le voci dei bambini si ottengono mescolando le voci disponibili e alzando l'altezza: si sintetizza più lento e si riproduce più veloce, senza artefatti. Le frasi brevissime (una o due parole) vengono male: meglio scriverle di almeno tre o quattro parole. I puntini in testa a una frase diventano un suono. Una trascrizione automatica delle registrazioni, confrontata con il testo, trova gli errori di pronuncia senza bisogno di ascoltare tutto; l'orecchio di una persona resta comunque l'ultimo controllo. Il nome del protagonista si può cambiare: le frasi che lo contengono vanno registrate di nuovo con quel nome, oppure le legge la voce del dispositivo.
+*Dove:* `strumenti/genera-voce.py`, `js/narrazione.js`, `assets/voce/`.
+
+### 3.21 Chi parla, uno alla volta
+Una frase nuova interrompe quella in corso, tranne quando è messa in coda (gli aiuti che arrivano mentre la narratrice sta parlando). La storia aspetta la fine della frase con un tempo minimo e uno massimo, così funziona uguale con la voce accesa, spenta, o lenta a caricarsi. Le frasi che stanno per servire si scaricano prima. I personaggi parlano con fumetto e voce insieme, e la bocca si muove.
+*Dove:* `speak`, `detto` in `js/core.js`; `parlaOra`, `dici`, `prepara` in `js/narrazione.js`.
+
+### 3.22 Musica procedurale a due strati
+Nessun file audio: le note si programmano con poco anticipo sull'orologio dell'audio, su una griglia comune ai due strati. Lo stato (0 calmo, 1 teso) regola il volume dei due strati con una dissolvenza a potenza costante e stringe un po' il tempo. Il basso non scende sotto quello che l'altoparlante di un tablet riesce a far sentire. Se la scheda va in pausa, si riparte da adesso senza recuperare le note perse.
+*Dove:* `js/musica.js` (`suonaPasso`, `giro`).
+
+### 3.23 Enigmi che non sanno niente di ABA
+Ogni enigma è una funzione che riceve `{ difficile, errore, risolto }` e restituisce il suo pezzo di interfaccia, `sblocca(pieno)` e `disegnaIndizio`. Segnala gli errori con un peso e non sa chi aiuta, né perché: la contingenza sta tutta nel modulo dell'aiuto, che traduce errori e tempo in rabbia e decide quando l'occasione è aperta. È lo stesso patto dei giochi del tablet (3.8). Nella versione difficile manca sempre una cosa precisa che una persona può dare, e i tentativi a vuoto ripetuti contano come un solo errore. Gli enigmi hanno misure pensate per un tablet; su uno schermo più piccolo è il pannello a rimpicciolirli quanto basta perché restino interi nel riquadro, così nessun enigma deve conoscere lo schermo.
+*Dove:* `js/enigmi.js`, `erroreEnigma`, `update` e `adatta` in `js/aiuto.js`.

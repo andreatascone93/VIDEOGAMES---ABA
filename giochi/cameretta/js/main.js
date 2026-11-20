@@ -8,22 +8,30 @@
    R-  porta sbattuta / tablet lanciato / urla / continuare fino a esplodere → arriva un genitore, niente XP, niente premi,
        il tablet viene tolto; si riparte il giorno dopo
    La casa è un solo spazio: cameretta e salone affiancati, uniti da una porta vera. Francesco può passare dall'una
-   all'altro ogni volta che cammina, e i genitori arrivano dal salone camminando. */
+   all'altro ogni volta che cammina, e i genitori arrivano dal salone camminando.
+   L'episodio ha una narratrice (js/narrazione.js, testi in js/testi.js), una musica che segue la rabbia (js/musica.js)
+   e un secondo filo: la scatola degli enigmi del nonno, dove si impara a chiedere aiuto invece di mollare (js/aiuto.js). */
 import * as THREE from 'three';
-import { db, save, cfg, N, $, sleep, clamp, tone, noise, jingle, speak, caption, objective, overlay, tween, stepTweens, toast, heartbeat, audio, buio } from './core.js';
+import { db, save, cfg, N, $, sleep, clamp, tone, noise, jingle, speak, caption, detto, objective, overlay, tween, stepTweens, toast, heartbeat, audio, buio } from './core.js';
 import { costruisciStanza, canvasTex, STANZA } from './stanza.js';
 import { costruisciSalone, TORRE, SALONE, SALONE_X } from './salone.js';
 import { Personaggio } from './personaggio.js';
 import { Volto } from './volto.js';
 import { Tablet } from './tablet.js';
 import { Rabbia } from './rabbia.js';
-import { creaPersona, parla, togli, zittisci, aggiornaFumetti } from './persone.js';
+import { creaPersona, togli, zittisci, aggiornaFumetti } from './persone.js';
 import { creaAttivita } from './attivita.js';
+import { creaAiuto } from './aiuto.js';
+import { dici, zitto, caricaVoce, prepara } from './narrazione.js';
+import { Musica } from './musica.js';
+import { NARRA, SCRITTE, VOCI } from './testi.js';
+import { SCATOLA } from './scatola.js';
 import { initTerapista } from './terapista.js';
 import { load } from './assets.js';
 import { ambiente } from './grafica.js';
 
 const DEBUG = new URLSearchParams(location.search).has('debug');
+const INTRO = new URLSearchParams(location.search).get('intro') !== '0';   // ?intro=0 salta la presentazione (prove automatiche)
 
 /* ------------------------------------------------------------------ scena */
 const canvas = $('world');
@@ -41,7 +49,7 @@ addEventListener('resize', resize); resize();
 
 /* ------------------------------------------------------------------ caricamento */
 const bar = $('bar').firstElementChild;
-let room, sal, P, volto, mamma, papa, leo, giulia, ATT;
+let room, sal, P, volto, mamma, papa, leo, giulia, ATT, AIUTO;
 const tablet = new Tablet();
 const tabMesh = new THREE.Group();   // il tablet nel mondo 3D
 let tabSchermo, luceTablet, crepe;
@@ -68,7 +76,9 @@ async function carica() {
       leo = await creaPersona({ nome: 'Leo', skin: 'farmerB', altezza: 1.2 });
       giulia = await creaPersona({ nome: 'Giulia', skin: 'farmerA', altezza: 1.14, capelli: 0xa5693f });
       [mamma, papa, leo, giulia].forEach(p => metti(p, 'salone'));
-    }
+      P.voce = 'f'; mamma.voce = 'mamma'; papa.voce = 'papa'; leo.voce = 'leo'; giulia.voce = 'giulia';   // ognuno parla con la sua voce
+    },
+    () => caricaVoce()
   ];
   for (let i = 0; i < passi.length; i++) { await passi[i](); bar.style.width = ((i + 1) / passi.length * 100) + '%'; }
   // tablet 3D
@@ -101,6 +111,10 @@ async function carica() {
   LS.divanoF.y = sal.sedutaDivano - .5; LS.divanoM.y = sal.sedutaDivano - .5 * mamma.altezza / 1.36;
   ATT = creaAttivita({ P, L, LS, room, sal, mamma, bimbi: [leo, giulia], cuffie, debug, vaiA, siedi, alzatiAnimato, camera_, fissa,
     breve: () => !!S && S.livello === 4, calma: k => { Rabbia.base = calmaDa + (10 - calmaDa) * clamp(k, 0, 1); }, bevi: on => { bicchiere.visible = on; sal.tazza.visible = !on; } });
+  AIUTO = creaAiuto({ scene, P, mamma, papa, leo, giulia, L, LS, PUNTI, room, sal, debug, vaiA, cammina, attraversa, siedi, alzatiAnimato, camera_, fissa, arriva, rientra, esceDalloStudio, rientraNelloStudio, visita, saltoDiTempo,
+    setAttivi, etichette, entrato, record, avanti: tempoLibero, luogo: () => luogo, S: () => S, giro: () => giro,
+    fase: v => v === undefined ? fase : (fase = v), blocca: () => { busy = true; freeWalk = false; }, fermo: () => { busy = false; freeWalk = false; },
+    punti: xp => { S.xp += xp; aggiornaStats(); }, scossa: v => { shake = Math.max(shake, v); $('flash').style.opacity = .5; setTimeout(() => { $('flash').style.opacity = 0; }, 450); } });
 }
 
 /* ------------------------------------------------------------------ luoghi */
@@ -149,6 +163,7 @@ const MAPPA = {
       const o = [[-2.6, -2.2, -1.55, -.35], [-1.55, -2.2, -.9, -1.55], [.6, -2.2, 2.6, -1.3], [2.0, -1.25, 2.6, -.65], [-2.6, .65, -1.5, 1.85], [-2.6, .25, -2.1, .65], [-2.6, 1.8, -2.0, 2.2]];
       if (room.sacco.visible) o.push([1.68, 1.18, 2.6, 1.62]);
       if (room.kartGioco.visible) o.push([.2, 1.4, .95, 2.1]);
+      const sc = AIUTO && AIUTO.ostacolo(); if (sc) o.push(sc);
       return o;
     },
     via: [[.2, .3], [.6, .9], [-1, .1], [1.3, .55]], pavimento: () => room.pavimento
@@ -215,11 +230,12 @@ async function alzatiAnimato() {
 /* ------------------------------------------------------------------ camera */
 const cam = { pos: new THREE.Vector3(.3, 3.9, 5.6), look: new THREE.Vector3(0, .6, -.2), sx: .5, sy: .5 };
 const camT = { pos: cam.pos.clone(), look: cam.look.clone(), sx: .5, sy: .5 };
-const camFissa = { pos: new THREE.Vector3(), look: new THREE.Vector3() };
+const camFissa = { pos: new THREE.Vector3(), look: new THREE.Vector3(), sx: .5, sy: .5, psy: null };
 let camMode = 'stanza', shake = 0, snapCam = false;
 const testa = new THREE.Vector3();
 function camera_(mode, subito = false) { camMode = mode; if (subito) snapCam = true; }
-function fissa(pos, look, subito = false) { const ox = ORIG[luogo]; camFissa.pos.set(pos[0] + ox, pos[1], pos[2]); camFissa.look.set(look[0] + ox, look[1], look[2]); camera_('fissa', subito); }   // coordinate della stanza
+// inquadratura fissa, in coordinate della stanza. sx, sy: dove cade sullo schermo il punto guardato (0–1); psy: lo stesso, con lo schermo in verticale
+function fissa(pos, look, subito = false, { sx = .5, sy = .5, psy = null, l = luogo } = {}) { const ox = ORIG[l]; camFissa.pos.set(pos[0] + ox, pos[1], pos[2]); camFissa.look.set(look[0] + ox, look[1], look[2]); Object.assign(camFissa, { sx, sy, psy }); camera_('fissa', subito); }
 function aggiornaCamera(dt) {
   const port = W / H < 1;
   if (camMode === 'stanza' || camMode === 'scelta') {
@@ -233,7 +249,7 @@ function aggiornaCamera(dt) {
     camT.pos.set(ox + fx + .2, 4.1 * k, 5.9 * k); camT.look.set(ox + fx, .45, -.05); camT.sx = .5; camT.sy = .5;
   } else if (camMode === 'fissa') {
     const k = port ? 1.5 : 1;
-    camT.pos.copy(camFissa.look).addScaledVector(v3.copy(camFissa.pos).sub(camFissa.look), k); camT.look.copy(camFissa.look); camT.sx = .5; camT.sy = .5;
+    camT.pos.copy(camFissa.look).addScaledVector(v3.copy(camFissa.pos).sub(camFissa.look), k); camT.look.copy(camFissa.look); camT.sx = port ? .5 : camFissa.sx; camT.sy = port && camFissa.psy != null ? camFissa.psy : camFissa.sy;
   } else {
     P.punto('Head', testa);
     const a = P.root.rotation.y;
@@ -264,6 +280,7 @@ const PUNTI = {
   porta: { obj: () => room.portaPivot, h: 2.25, off: [0, 0, .45], luogo: () => L.portaUscita },
   sacco: { obj: () => room.saccoPivot, h: 2.0, luogo: () => L.sacco },
   kart: { obj: () => room.kartGioco, h: .7, luogo: () => L.kart },
+  letto: { obj: () => room.letto, h: 1.05, luogo: () => L.letto },
   io: { obj: () => P.root, h: 1.78, rel: true },
   mamma: { obj: () => mamma.root, h: 1.55, rel: true, luogo: () => LS.daMamma },
   bambini: { obj: () => sal.torre, h: 1.2, luogo: () => LS.gioco },
@@ -320,14 +337,17 @@ let S = null, forza = 1, inPartita = null, calmaDa = 70;
 const setRabbia = (z, o) => Rabbia.set(z, o);
 function aggiornaStats() { $('sXp').textContent = S.xp; $('sForza').textContent = forza; }
 function record(tipo, extra = {}) { S.prove.push({ ora: new Date().toISOString(), tipo, ...extra }); }
-const occasioni = () => S.prove.filter(t => t.tipo !== 'modello_osservato').length;
+const occasioni = () => S.prove.filter(t => !t.ambito && t.tipo !== 'modello_osservato').length;   // le occasioni del tablet (quelle della scatola hanno ambito 'aiuto')
+// che cosa c'è nell'episodio, e che cosa resta da fare
+const conTablet = () => cfg().percorso !== 'enigmi', conEnigmi = () => cfg().percorso !== 'tablet';
+const tabletFinito = () => !conTablet() || (S.livello === 1 ? S.cicli >= 1 : occasioni() >= Number(cfg().prove));
 
 /* La rabbia cambia zona: è il gioco a raccontarlo, e la zona arancione apre l'occasione di scelta */
 Rabbia.onZona = (z, prima) => {
   if (!S || !tablet.aperto || !S.ciclo || z <= prima) return;
-  if (z === 2) caption(N() + ' stringe i denti e sbuffa. La rabbia sta salendo.', false);
+  if (z === 2) caption(SCRITTE.zona2(), false);
   if (z === 3) inizioSD();
-  if (z === 4) caption(N() + ' non ce la fa più!', false);
+  if (z === 4) caption(SCRITTE.zona4(), false);
 };
 
 /* ------------------------------------------------------------------ ciclo di animazione */
@@ -337,10 +357,12 @@ function loop(now) {
   requestAnimationFrame(loop);
   const dt = Math.min(.05, (now - last) / 1000); last = now; tempo += dt; frame++;
   stepTweens(now);
-  if (!P || !ATT) return;
+  if (!P || !AIUTO) return;
   P.update(dt);
   for (const p of [mamma, papa, leo, giulia]) if (p.root.visible) p.update(dt);
+  AIUTO.update(dt);
   Rabbia.update(dt);
+  Musica.rabbia(Rabbia.v); Musica.scena(tablet.aperto || cuffie.visible ? 0 : 1);   // la musica segue la rabbia; tace quando suona il tablet o la musica in cuffia
   const z = Rabbia.zona;
   // continuare a giocare oltre l'arancione porta al rosso: a quel punto Francesco esplode
   if (inPartita && inPartita.oltre && Rabbia.v >= 95 && tablet.inPartita) tablet.interrompi('esplosione');
@@ -367,9 +389,13 @@ function loop(now) {
   // durante i giochi sul tablet la stanza si ridisegna meno spesso (risparmio della GPU del tablet)
   if (!tablet.aperto || frame % 3 === 0) renderer.render(scene, camera);
   // etichette e fumetti
+  // (restano dentro lo schermo e fuori dai riquadri in alto: la barra della rabbia con i segnali del corpo a sinistra, i punti a destra)
+  const hudSx = $('anger').style.display === 'block' ? ($('signals').style.display === 'block' ? $('signals').offsetTop + $('signals').offsetHeight + 8 : 96) : 0;
   for (const a of Object.values(attivi)) {
     const I = PUNTI[a.punto]; I.obj().getWorldPosition(v3); if (I.off) v3.add(v4.set(...I.off)); v3.y = I.rel ? v3.y + I.h : I.h; v3.project(camera);
-    a.el.style.left = clamp((v3.x + 1) / 2 * W, a.meta, W - a.meta) + 'px'; a.el.style.top = ((1 - v3.y) / 2 * H) + 'px';
+    const y = Math.max(52, (1 - v3.y) / 2 * H), su = y - 46 - (a.riga || 0) * 46;
+    const x0 = su < hudSx ? Math.min(284 + a.meta, W / 2) : a.meta, x1 = su < 70 ? Math.max(W - 200 - a.meta, W / 2) : W - a.meta;
+    a.el.style.left = clamp((v3.x + 1) / 2 * W, x0, x1) + 'px'; a.el.style.top = y + 'px';
   }
   aggiornaFumetti(camera, W, H);
 }
@@ -381,23 +407,48 @@ async function iniziaSessione() {
   S = { id: Date.now(), inizio: new Date().toISOString(), livello: Number(cfg().livello), aiuto: cfg().aiuto, prove: [], partite: [], giochi: [], xp: 0, cicli: 0, ritardo: null, prova: null, ciclo: null };
   forza = 1; P.root.scale.setScalar(1); P.nome = N();
   room.sacco.visible = !!cfg().saccoCalma; room.kartGioco.visible = false;
-  rompiTablet(false); posaTablet('scrivania'); schermoTablet(true); mostraStanza('salone');
-  overlay('home', false);
+  rompiTablet(false); posaTablet('scrivania'); schermoTablet(true); mostraStanza('salone'); AIUTO.nuovaSessione();
+  overlay('home', false); Musica.avvia();
   $('anger').style.display = 'block'; $('stats').style.display = 'flex'; aggiornaStats(); Rabbia.segnali = true; Rabbia.set(1, { subito: true });
-  // Francesco è appena tornato da scuola: attraversa il salone ed entra in cameretta dalla porta
+  // Francesco è appena tornato da scuola: la narratrice lo presenta, poi lui attraversa il salone ed entra in cameretta
   P.stop(); P.root.position.set(-.6, 0, .2); P.root.rotation.y = -Math.PI / 2; P.play('idle'); camera_('stanza', true);
   busy = true; fase = null;
-  caption(N() + ' è appena tornato da scuola. Va nella sua cameretta.');
-  await sleep(1200);
+  const p = cfg().percorso in NARRA.libero() ? cfg().percorso : 'tutto', sid = S.id, viva = () => S && S.id === sid;
+  // la presentazione si può saltare: il bottone ferma la voce e porta subito al gioco
+  let saltata = !INTRO; const b = $('saltaBtn');
+  const salto = new Promise(ok => { b.onclick = () => { saltata = true; zitto(); b.style.display = 'none'; ok(); }; });
+  const dice = async (testo, ms) => { if (saltata || !viva()) return; caption(testo); await Promise.race([detto(ms), salto]); };
+  if (!saltata) {
+    b.style.display = 'block'; prepara([NARRA.intro1(), NARRA.intro2(), NARRA.intro3(), NARRA.intro4(), NARRA.intro5()[p], NARRA.scatolaIntro(), NARRA.libero()[p]]);
+    await buio(true, SCRITTE.cartello()); await Promise.race([sleep(1900), salto]); await buio(false);
+    fissa([-2.5, 1.45, 2.1], [-.6, 1.0, .2], true);                                await dice(NARRA.intro1(), 4600);
+    if (!saltata) fissa([.2, 1.6, .5], [1.4, .7, -1.6], true, { l: 'cameretta' }); await dice(NARRA.intro2(), 5200);
+    if (!saltata) camera_('viso', true);                                           await dice(NARRA.intro3(), 6200);
+    if (!saltata) camera_('stanza');                                               await dice(NARRA.intro4(), 9500);
+  }
+  if (!viva()) return;
+  camera_('stanza', saltata);
+  if (!saltata) caption(NARRA.intro5()[p]); else caption('');
+  const d5 = saltata ? null : Promise.race([detto(3200), salto]);
   await attraversa(P);
   await P.walkTo(.9, .45);
-  await sleep(400);
+  await d5;
+  if (conEnigmi() && viva()) {
+    // la sorpresa: la scatola del nonno, con il suo biglietto
+    await vaiA({ x: .15, z: .75, rot: Math.atan2(SCATOLA.x - .15, SCATOLA.z - .75) });
+    if (!saltata) fissa([SCATOLA.x + 1.5, 1.3, SCATOLA.z + 2.1], [SCATOLA.x + .25, .25, SCATOLA.z - .1]);
+    await dice(NARRA.scatolaIntro(), 9000);
+  }
+  if (!viva()) return;
+  b.style.display = 'none'; camera_('stanza');
+  await sleep(300);
   busy = false;
-  testoFase = 'Tocca il pavimento per far camminare ' + N() + ': può girare per tutta la casa. Poi tocca il tablet sulla scrivania.';
-  caption(testoFase);
-  objective('Prendi il tablet e gioca');
+  testoFase = NARRA.libero()[p];
+  caption(testoFase, INTRO);
+  objective(obiettivoLibero());
   fase = 'inizio'; freeWalk = true; etichette();
 }
+const obiettivoLibero = () => !conEnigmi() || AIUTO.finita() ? (fase === 'prossimo' ? 'Torna al tablet' : 'Prendi il tablet e gioca') : tabletFinito() ? 'Apri la scatola del nonno' : 'Tablet o scatola: scegli tu';
 
 async function prendiTablet({ riprendi = false } = {}) {
   freeWalk = false; fase = null; objective('');
@@ -421,11 +472,11 @@ async function giocaAlTablet(riprendi = false) {
   let C = S.ciclo;
   if (!riprendi || !C) {
     Rabbia.set(0);
-    caption('Il tablet è acceso. Scegli a cosa gioca ' + N() + '.', false);
+    caption(SCRITTE.tabletAcceso(), false);
     C = S.ciclo = nuovoCiclo(); C.gioco = await tablet.scegliGioco();
     if (!S.giochi.includes(C.gioco)) S.giochi.push(C.gioco);
-    caption(N() + ' gioca a ' + NOME_GIOCO[C.gioco] + '. Si diverte un sacco.', false);
-  } else caption(Rabbia.zona >= 3 ? N() + ' riprende a giocare, ma è troppo arrabbiato per giocare bene.' : N() + ' riprende a giocare.', false);
+    caption(SCRITTE.gioca(NOME_GIOCO[C.gioco]), false);
+  } else caption(SCRITTE.riprende(Rabbia.zona >= 3), false);
   while (true) {
     const esito = C.nV < C.vittorie ? 'vinci' : 'perdi';
     const r = await partitaConRabbia(C, esito);
@@ -437,12 +488,12 @@ async function giocaAlTablet(riprendi = false) {
     let b;
     if (r.vinto) {
       C.nV++; Rabbia.porta(8); chiudiProva();
-      caption(['Che partita! ' + N() + ' è carichissimo.', 'Ancora una vittoria! ' + N() + ' si diverte un sacco.', 'Vince di nuovo!'][Math.min(C.nV - 1, 2)], false);
+      caption(SCRITTE.vittoria(C.nV - 1), false);
       b = await tablet.risultato({ vinto: true, titolo: r.titolo, desc: r.desc, bottoni: [{ id: 'ancora', testo: 'GIOCA ANCORA' }] });
     } else {
       C.nP++;
       const forte = Rabbia.zona >= 3;
-      if (!forte) caption(N() + ' ha perso. Stringe i denti e sbuffa.', false);
+      if (!forte) caption(SCRITTE.sconfitta(), false);
       b = await tablet.risultato({ vinto: false, titolo: r.titolo, desc: r.desc + (forte ? ' Non è giusto!' : ''), kicker: C.nP > 1 ? 'HAI PERSO DI NUOVO' : 'HAI PERSO', bottoni: [{ id: 'ancora', testo: 'RIVINCITA' }] });
     }
     if (b === 'posa') return dopoPosa('dopo');
@@ -475,7 +526,7 @@ async function partitaConRabbia(C, esito) {
 function inizioSD() {
   if (S.prova && !S.prova.anticipata) return;
   S.prova = { t0: Date.now(), aiuto: null, rivincite: 0, posato: null, anticipata: false };
-  caption(N() + ' sente la rabbia nel corpo: pugni stretti, faccia rossa e calda, cuore che batte forte.');
+  caption(NARRA.sd());
   clearTimeout(S.ritardo);
   if (S.livello === 1) S.ritardo = setTimeout(() => { if (S && S.prova && tablet.aperto) { if (tablet.inPartita) tablet.interrompi('modello'); else tablet.esciDalRisultato('modello'); } }, 4500);
   else if (S.livello === 2) S.ritardo = setTimeout(() => aiutoPosa(S.aiuto), 1800);
@@ -485,7 +536,7 @@ function aiutoPosa(tipo) {
   if (!S || !S.prova || S.prova.posato || !tablet.aperto) return;
   S.prova.aiuto = S.prova.aiuto === 'completo' ? 'completo' : tipo;
   const b = $('posaBtn'); b.classList.add('hot'); b.classList.toggle('freccia', tipo === 'completo');
-  if (tipo === 'completo') speak(N() + ' può posare il tablet e fare un\'altra cosa.');
+  if (tipo === 'completo') speak(NARRA.promptPosa(), { accoda: true });   // l'aiuto a voce aspetta che la narratrice abbia finito di descrivere i segnali del corpo
 }
 function chiudiProva() { if (!S) return; clearTimeout(S.ritardo); S.prova = null; $('posaBtn').classList.remove('hot', 'freccia'); }
 
@@ -493,7 +544,7 @@ function chiudiProva() { if (!S) return; clearTimeout(S.ritardo); S.prova = null
 $('posaBtn').onclick = () => {
   if (!S || !tablet.aperto || !S.ciclo) return;
   audio(); jingle.click();
-  if (Rabbia.zona < 2 && !S.prova) { caption(N() + ' è tranquillo e si sta divertendo: continua a giocare.', false); return; }
+  if (Rabbia.zona < 2 && !S.prova) { caption(SCRITTE.tranquillo(), false); return; }
   ultimoTocco = Date.now();
   if (tablet.inPartita) tablet.interrompi('posa'); else tablet.esciDalRisultato('posa');
 };
@@ -516,8 +567,8 @@ async function momentoScelta() {
   await lasciaTablet();
   await vaiA(L.centro);
   camera_('viso');
-  caption(Rabbia.zona >= 3 ? N() + ' ha posato il tablet. È ancora arrabbiato: pugni stretti, faccia rossa, il cuore batte forte.' : N() + ' ha posato il tablet prima che la rabbia diventasse forte.');
-  await sleep(3600);
+  caption(Rabbia.zona >= 3 ? NARRA.posatoArrabbiato() : NARRA.posatoPrima());
+  await detto(3600);
   apriScelte();
 }
 function apriScelte() { fase = 'scelta'; entrato(); }
@@ -532,7 +583,7 @@ function aiutoScelta(tipo, voce) {
   if (!S || !S.prova || busy) return;
   S.prova.aiuto = S.prova.aiuto === 'completo' ? 'completo' : tipo;
   Object.entries(attivi).forEach(([id, a]) => { if (a.buona) evidenzia(id, true); });
-  if (tipo === 'completo' && voce) speak(luogo === 'salone' ? N() + ' può parlare con la mamma o giocare con gli altri bambini.' : N() + ' può fare un\'altra cosa per calmarsi: ascoltare la musica, disegnare' + (cfg().saccoCalma ? ', sfogarsi al sacco' : '') + ' o andare in salone.');
+  if (tipo === 'completo' && voce) speak(NARRA.promptScelta()[luogo === 'salone' ? 'salone' : cfg().saccoCalma ? 'conSacco' : 'senzaSacco'], { accoda: true });
 }
 
 /* La scelta è fatta: si registra l'occasione e arrivano le conseguenze */
@@ -550,7 +601,8 @@ async function scelta(id) {
     await comportamentoProblema(id);
   }
 }
-const BUONE = { musica: () => ATT.musica(), disegno: () => ATT.disegno(), mamma: () => ATT.mamma(), costruzioni: () => ATT.costruzioni(), sacco: () => giocoSacco({ calma: true }) };
+const alPosto = async g => { if (g.rientro) { await g.rientro; g.rientro = null; } };   // chi stava tornando al suo posto dopo aver aiutato, prima ci arriva
+const BUONE = { musica: () => ATT.musica(), disegno: () => ATT.disegno(), mamma: async () => { await alPosto(mamma); return ATT.mamma(); }, costruzioni: async () => { await alPosto(giulia); return ATT.costruzioni(); }, sacco: () => giocoSacco({ calma: true }) };
 
 /* Livello 1: il giocatore guarda Francesco che posa il tablet da solo e va a fare un'altra cosa */
 async function modeling() {
@@ -558,8 +610,8 @@ async function modeling() {
   record('modello_osservato', { scelta: 'musica' });
   busy = true; freeWalk = false; fase = null; setAttivi({});
   await lasciaTablet(); camera_('viso');
-  caption('Guarda cosa fa ' + N() + '. Sente la rabbia nel corpo e pensa: "Poso il tablet e faccio un\'altra cosa".');
-  await sleep(4600);
+  caption(NARRA.modello());
+  await detto(4600);
   camera_('stanza'); calmaDa = Math.max(Rabbia.v, Rabbia.base); Rabbia.porta(calmaDa);
   await ATT.musica();
   await calmaRitrovata();
@@ -610,7 +662,11 @@ let fase = null, testoFase = '';   // inizio | scelta | premi | prossimo
 function etichette() {
   const m = {}, sc = fase === 'scelta';
   if (luogo === 'cameretta') {
-    if (fase === 'inizio' || fase === 'prossimo') m.tablet = { testo: fase === 'inizio' ? 'Prendi il tablet' : 'Gioca al tablet', hot: true, azione: prendiTablet };
+    if ((fase === 'inizio' || fase === 'prossimo') && !tabletFinito()) m.tablet = { testo: fase === 'inizio' ? 'Prendi il tablet' : 'Gioca al tablet', hot: true, azione: prendiTablet };
+    // con una serratura in corso può alzarsi e andare al tablet: la serratura si considera lasciata
+    if (fase === 'enigma' && !tabletFinito()) m.tablet = { testo: 'Gioca al tablet', azione: () => { AIUTO.lascia('va_al_tablet'); return prendiTablet(); } };
+    // finito il tablet, se la scatola è ancora chiusa e ci ha già provato, si può chiudere l'episodio: la scatola aspetta domani
+    if ((fase === 'inizio' || fase === 'prossimo') && tabletFinito() && !AIUTO.finita() && S.prove.some(t => t.ambito === 'aiuto')) m.basta = { punto: 'letto', testo: SCRITTE.basta(), azione: fineSessione };
     if (fase === 'premi') { m.sacco = { testo: 'Sacco da boxe', hot: true, azione: () => premio('sacco') }; m.kart = { testo: 'Gara di kart', hot: true, azione: () => premio('kart') }; }
     if (sc) {
       m.musica = { punto: 'poltrona', testo: 'Ascolta la musica', buona: true, azione: () => scelta('musica') };
@@ -629,6 +685,7 @@ function etichette() {
     } else m.mamma = { testo: 'Saluta la mamma', azione: salutaMamma };
     m.torna = { punto: 'portaSalone', testo: 'Torna in cameretta', luogo: () => null, azione: () => vaiNellAltraStanza() };
   }
+  AIUTO.etichette(m, fase, luogo);   // la scatola del nonno e, con una serratura in corso, la persona a cui chiedere
   setAttivi(m);
 }
 /* Francesco è arrivato in una stanza, o la storia apre un momento di scelta: tornano il cammino libero e le scelte di quella stanza */
@@ -637,17 +694,18 @@ function entrato() {
   const inSal = luogo === 'salone';
   if (fase === 'scelta') {
     camera_(inSal ? 'stanza' : 'scelta');
-    caption(inSal ? 'In salone ci sono la mamma, Leo e Giulia. Cosa fa ' + N() + '?' : 'Cosa fa adesso ' + N() + '? Decidi tu: tocca una scelta.');
-    objective('Cosa fa ' + N() + '?');
+    caption(inSal ? NARRA.cosaFaSalone() : NARRA.cosaFa());
+    objective(SCRITTE.obScelta());
     etichette(); aiutiScelta();
   } else {
     camera_('stanza');
-    caption(inSal ? 'In salone ci sono la mamma, Leo e Giulia.' : testoFase, false);
+    caption(inSal ? SCRITTE.salone() : fase === 'enigma' ? '' : testoFase, false);
     etichette();
   }
 }
 async function salutaMamma() {
-  await parla(P, 'Ciao mamma!'); await parla(mamma, 'Ciao tesoro!');
+  await alPosto(mamma);
+  await dici(P, VOCI.f.ciaoMamma()); await dici(mamma, VOCI.mamma.ciao());
   entrato();
 }
 
@@ -655,7 +713,7 @@ async function salutaMamma() {
 async function calmaRitrovata() {
   setAttivi({}); objective(''); freeWalk = false; busy = true; fase = null; zittisci();
   Rabbia.porta(10, { umore: 'calmo' });
-  if (luogo === 'salone') { caption(N() + ' si sente meglio. Torna in cameretta.'); await sleep(1600); camera_('stanza'); await attraversa(P); await vaiA(L.centro); }
+  if (luogo === 'salone') { caption(NARRA.meglioTorna()); await detto(1600); camera_('stanza'); await attraversa(P); await vaiA(L.centro); }
   else { camera_('stanza'); await sleep(1100); }
   Rabbia.set(0);
   S.xp += 100; forza++; aggiornaStats();
@@ -665,7 +723,7 @@ async function calmaRitrovata() {
   tween(v => { aura.material.opacity = v; aura.scale.setScalar(1 + v * 1.4); }, 0, .95, 600).then(() => tween(v => aura.material.opacity = v, .95, 0, 1300));
   P.root.scale.setScalar(1 + Math.min(forza - 1, 5) * .015);
   const nuovi = [room.sacco, room.kartGioco].filter(g => !g.visible);
-  testoFase = N() + ' si sente meglio ed è più forte. ' + (nuovi.length ? 'Ha sbloccato dei giochi nella cameretta: scegline uno!' : 'Ora può scegliere un gioco.');
+  testoFase = NARRA.calma()[nuovi.length ? 'nuovi' : 'solito'];
   caption(testoFase);
   nuovi.forEach(g => { g.visible = true; const s = g.scale.x; tween(v => g.scale.setScalar(v), .01, s, 700); });
   await sleep(1200);
@@ -703,60 +761,79 @@ async function comportamentoProblema(c) {
     await sleep(250);
     await tween(v => room.portaPivot.rotation.y = v, -1.25, 0, 150);
     noise(.4, .35, 600); tone(70, .35, 'square', .08); shake = .15; $('flash').style.opacity = .6;
-    caption('BAM! ' + N() + ' ha sbattuto la porta.');
-    P.play('idle'); await sleep(2200); $('flash').style.opacity = 0;
+    caption(NARRA.bam());
+    P.play('idle'); await detto(2200); $('flash').style.opacity = 0;
     camera_('stanza'); await vaiA(ATTESA);
-    chi = papa; battute = [N() + ', le porte non si sbattono.', 'Per oggi il tablet lo tengo io.'];
+    chi = papa; battute = VOCI.papa.porta();
   } else if (c === 'urla') {
     Rabbia.set(4); caption(''); camera_('viso');
     P.play('jump', { once: true, speed: 1.3 }).then(() => P.play('idle'));
     tone(620, .5, 'sawtooth', .07); tone(470, .7, 'sawtooth', .06, .2); shake = .1; $('flash').style.opacity = .5;
-    await parla(P, 'AAAH! NON È GIUSTO!', { ms: 2400, voce: false });
-    caption(N() + ' ha urlato fortissimo. In salone hanno sentito tutti.');
-    await sleep(1800); $('flash').style.opacity = 0; camera_('stanza'); await vaiA(ATTESA);
-    chi = mamma; battute = [N() + ', se urli non riesco a capirti.', 'Per oggi basta tablet. Quando sei calmo, vieni a dirmelo.'];
+    await dici(P, 'AAAH! NON È GIUSTO!', { ms: 2400, voce: false });
+    caption(NARRA.urlato());
+    await detto(1800); $('flash').style.opacity = 0; camera_('stanza'); await vaiA(ATTESA);
+    chi = mamma; battute = VOCI.mamma.urla();
   } else {
     Rabbia.set(4); caption('');
-    if (c === 'esplosione') { camera_('viso'); caption(N() + ' ha continuato a giocare e ha perso ancora. Non ce la fa più.'); await sleep(2200); await alzatiAnimato(); }
+    if (c === 'esplosione') { camera_('viso'); caption(NARRA.esplode()); await detto(2200); await alzatiAnimato(); }
     else { P.play('interactStanding', { once: true, speed: 1.5 }); await sleep(450); tabStato = 'mano'; await sleep(350); camera_('viso'); }
     await lanciaTablet();
-    caption('CRASH! ' + N() + ' ha lanciato il tablet. Lo schermo si è rotto.');
-    await sleep(2600); $('flash').style.opacity = 0; camera_('stanza');
-    chi = mamma; battute = ['Il tablet è caduto e lo schermo si è rotto.', 'Va fatto riparare. Per qualche giorno niente tablet.']; dopo = 'Qualche giorno dopo';
+    caption(NARRA.crash());
+    await detto(2600); $('flash').style.opacity = 0; camera_('stanza');
+    chi = mamma; battute = VOCI.mamma.rotto(); dopo = 'Qualche giorno dopo';
   }
   await visita(chi, battute);
   Rabbia.set(3);
-  caption(N() + ' è ancora arrabbiato e non si sente meglio. Niente XP, niente giochi premio e niente tablet.');
-  await sleep(5200);
+  caption(NARRA.dopoProblema());
+  await detto(5200);
   await saltoDiTempo(dopo);
   busy = false;
-  prossimoCiclo(c === 'tablet' || c === 'esplosione' ? 'Il tablet è stato riparato. Riproviamo: quando vuoi, prendi il tablet sulla scrivania.' : 'Oggi ' + N() + ' può di nuovo usare il tablet. Riproviamo: è sulla scrivania.');
+  prossimoCiclo(NARRA.riprova()[c === 'tablet' || c === 'esplosione' ? 'riparato' : 'oggi']);
 }
 /* Un genitore arriva dal salone, entra in cameretta dalla porta, dice due frasi con calma e porta via il tablet.
    La casa reagisce davvero: la mamma si alza dal divano, il papà entra dal corridoio. */
 const ATTESA = { x: -.4, z: 1.0, rot: Math.PI / 2 };   // dove Francesco aspetta, fuori dal percorso del genitore
 const VIA_PAPA = [[2.6, -.38], [.3, -.6], [-.45, .15], [-2.3, .4]], CORRIDOIO = [4.0, -.38];
+const VIA_GIULIA = [[2.45, -.5], [.3, -.6], [-.45, .15], [-2.3, .4]];
+async function esceDalloStudio() {
+  const g = papa; if (g.root.visible) return;
+  g.stop(); g.root.position.set(CORRIDOIO[0], 0, CORRIDOIO[1]); g.root.rotation.y = -Math.PI / 2; g.play('idle', { fade: 0 }); g.root.visible = true;
+  tone(300, .08, 'triangle', .05); await tween(v => sal.portaCorridoio.rotation.y = v, 0, -1.3, 380);
+  await g.walkTo(...VIA_PAPA[0]);
+  tween(v => sal.portaCorridoio.rotation.y = v, -1.3, 0, 480);
+}
+async function rientraNelloStudio() {
+  const t = giro, ok = () => t === giro, g = papa;
+  await tween(v => { if (ok()) sal.portaCorridoio.rotation.y = v; }, 0, -1.3, 380); if (!ok()) return;
+  await g.walkTo(...CORRIDOIO); if (!ok()) return;
+  g.root.visible = false; tween(v => { if (ok()) sal.portaCorridoio.rotation.y = v; }, -1.3, 0, 480);
+}
+/* Dal proprio posto fino alla porta della cameretta: il papà esce dallo studio, la mamma si alza dal divano, Giulia dal tappeto */
 async function arriva(g) {
+  await alPosto(g);
   if (g === papa) {
-    g.stop(); g.root.position.set(CORRIDOIO[0], 0, CORRIDOIO[1]); g.root.rotation.y = -Math.PI / 2; g.play('idle', { fade: 0 }); g.root.visible = true;
-    tone(300, .08, 'triangle', .05); await tween(v => sal.portaCorridoio.rotation.y = v, 0, -1.3, 380);
-    await g.walkTo(...VIA_PAPA[0]);
-    tween(v => sal.portaCorridoio.rotation.y = v, -1.3, 0, 480);
+    await esceDalloStudio();
     for (const [x, z] of VIA_PAPA.slice(1)) await g.walkTo(x, z);
+  } else if (g === giulia) {
+    const r = g.root, y0 = r.position.y; g.play('idle', { fade: .35 });
+    await tween(k => { r.position.y = y0 * (1 - k); }, 0, 1, 420);
+    for (const [x, z] of VIA_GIULIA) await g.walkTo(x, z);
   } else {
     const r = g.root, p0 = r.position.clone(); g.play('idle', { fade: .35 });
     await tween(k => r.position.set(p0.x, p0.y * (1 - k), p0.z + (-1.28 - p0.z) * k), 0, 1, 450);
     await g.walkTo(-2.5, -1.28);
   }
 }
-/* Dopo la visita il genitore torna al suo posto, mentre la storia va avanti */
+/* Dopo la visita (o dopo aver aiutato) ognuno torna al suo posto, mentre la storia va avanti */
 async function rientra(g) {
   const t = giro, ok = () => t === giro;
   if (g === papa) {
     for (const [x, z] of [...VIA_PAPA].reverse()) { await g.walkTo(x, z); if (!ok()) return; }
-    await tween(v => { if (ok()) sal.portaCorridoio.rotation.y = v; }, 0, -1.3, 380); if (!ok()) return;
-    await g.walkTo(...CORRIDOIO); if (!ok()) return;
-    g.root.visible = false; tween(v => { if (ok()) sal.portaCorridoio.rotation.y = v; }, -1.3, 0, 480);
+    await rientraNelloStudio(); if (!ok()) return;
+  } else if (g === giulia) {
+    for (const [x, z] of [...VIA_GIULIA].reverse()) { await g.walkTo(x, z); if (!ok()) return; }
+    const r = g.root, p0 = r.position.clone(), d = LS.giulia; g.faceTo(d.rot, 200); g.play('sit', { fade: .4 });
+    await tween(k => { if (ok()) r.position.set(p0.x + (d.x - p0.x) * k, d.y * k, p0.z + (d.z - p0.z) * k); }, 0, 1, 500);
   } else {
     await g.walkTo(-2.5, -1.28); if (!ok()) return;
     await g.walkTo(LS.divanoM.x, -1.28); if (!ok()) return;
@@ -765,28 +842,34 @@ async function rientra(g) {
   }
   if (ok() && tabStato === 'genitore') { portatore = null; tabStato = 'via'; tabMesh.visible = false; }
 }
-async function visita(g, battute) {
+/* Un genitore viene in cameretta, dice due frasi con calma e porta via qualcosa: il tablet, oppure quello che decide `prendi` */
+async function visita(g, battute, { prendi = null } = {}) {
   caption('');
-  // la camera si allarga sulla casa: si vede il genitore che arriva dal salone (più larga per il papà, che entra dal corridoio)
-  if (g === papa) fissa([4.5, 7.0, 9.6], [4.0, .4, -.3]); else fissa([3.7, 6.0, 8.2], [3.0, .5, -.3]);
-  await arriva(g);
-  camera_('stanza');
-  await attraversa(g, { tieniAperta: true });
-  await g.walkTo(1.55, .6);
+  if (g.stanza !== 'cameretta') {
+    // la camera si allarga sulla casa: si vede il genitore che arriva dal salone (più larga per il papà, che esce dallo studio)
+    if (g === papa) fissa([4.5, 7.0, 9.6], [4.0, .4, -.3]); else fissa([3.7, 6.0, 8.2], [3.0, .5, -.3]);
+    await arriva(g);
+    camera_('stanza');
+    await attraversa(g, { tieniAperta: true });
+    await g.walkTo(1.55, .6);
+  } else camera_('stanza');
   // si avvicina a Francesco se è lontano
-  const p = P.root.position, d = Math.hypot(p.x - 1.55, p.z - .6);
-  if (d > 1.6) { const k = 1.25 / d, x = p.x + (1.55 - p.x) * k, z = p.z + (.6 - p.z) * k; if (!dentro(x, z, .12)) await cammina(x, z, { chi: g }); }
+  const p = P.root.position, o = g.root.position, d = Math.hypot(p.x - o.x, p.z - o.z);
+  if (d > 1.6) { const k = 1.25 / d, x = p.x + (o.x - p.x) * k, z = p.z + (o.z - p.z) * k; if (!dentro(x, z, .12)) await cammina(x, z, { chi: g }); }
   const q = g.root.position;
   g.faceTo(Math.atan2(p.x - q.x, p.z - q.z), 250); P.faceTo(Math.atan2(q.x - p.x, q.z - p.z), 250); await sleep(350);
-  for (const b of battute) await parla(g, b);
-  // prende il tablet dov'è rimasto
-  if (tabStato === 'terra') { await cammina(tabMesh.position.x, clamp(tabMesh.position.z + .5, -1.1, 1.8), { chi: g }); g.faceTo(Math.PI, 200); await sleep(220); g.play('interactGround', { once: true, speed: 1.4 }).then(() => g.play('idle')); }
-  else { await cammina(-1.35, -.8, { chi: g }); g.faceTo(-Math.PI / 2, 200); await sleep(220); g.play('interactStanding', { once: true, speed: 1.4 }).then(() => g.play('idle')); }
-  await sleep(600); tabStato = 'genitore'; portatore = g; schermoTablet(false); tone(500, .06, 'triangle', .04);
-  await sleep(700);
+  for (const b of battute) await dici(g, b);
+  if (prendi) await prendi(g);
+  else {
+    // prende il tablet dov'è rimasto
+    if (tabStato === 'terra') { await cammina(tabMesh.position.x, clamp(tabMesh.position.z + .5, -1.1, 1.8), { chi: g }); g.faceTo(Math.PI, 200); await sleep(220); g.play('interactGround', { once: true, speed: 1.4 }).then(() => g.play('idle')); }
+    else { await cammina(-1.35, -.8, { chi: g }); g.faceTo(-Math.PI / 2, 200); await sleep(220); g.play('interactStanding', { once: true, speed: 1.4 }).then(() => g.play('idle')); }
+    await sleep(600); tabStato = 'genitore'; portatore = g; schermoTablet(false); tone(500, .06, 'triangle', .04);
+    await sleep(700);
+  }
   await cammina(1.55, .6, { chi: g });
   await attraversa(g);
-  rientra(g);
+  g.rientro = rientra(g);
 }
 async function saltoDiTempo(testo) {
   await buio(true, testo); await sleep(1700);
@@ -803,13 +886,13 @@ async function premio(tipo) {
   if (tipo === 'sacco') await giocoSacco();
   else await giocoKart();
   busy = false;
-  prossimoCiclo(N() + ' si è divertito. Quando vuoi, torna a giocare al tablet sul letto.');
+  prossimoCiclo(NARRA.divertito()[conEnigmi() && !AIUTO.finita() ? 'scatola' : 'tablet']);
 }
 
 const sacco = { a: 0, v: 0, k: 9, c: 1.4 };
 async function giocoSacco({ calma = false } = {}) {
   await vaiA(L.sacco);
-  camera_('sacco'); caption(calma ? N() + ' si sfoga al sacco: tocca PUGNO o CALCIO. Colpo dopo colpo la rabbia scende.' : 'Allenamento al sacco: tocca PUGNO o CALCIO. Più ' + N() + ' è forte, più il sacco vola!', false);
+  camera_('sacco'); caption(calma ? SCRITTE.saccoCalma() : SCRITTE.saccoPremio(), false);
   $('saccoHud').classList.add('active');
   const T = calma ? Math.max(6, Math.round((Number(cfg().secondiAttivita) || 25) * (S.livello === 4 ? .7 : 1))) : Number(cfg().secondiPremio) || 30;
   let colpi = 0, t = T;
@@ -834,7 +917,7 @@ async function giocoSacco({ calma = false } = {}) {
   removeEventListener('keydown', keys);
   $('saccoHud').classList.remove('active');
   if (!calma) toast(colpi + ' COLPI!', 1800);
-  caption(N() + ' ha messo a segno ' + colpi + ' colpi.' + (calma ? '' : ' Che allenamento!'), false);
+  caption(SCRITTE.colpi(colpi, calma), false);
   await sleep(1800); camera_('stanza');
 }
 async function giocoKart() {
@@ -849,31 +932,50 @@ async function giocoKart() {
   tablet.chiudi();
 }
 
-function prossimoCiclo(msg) {
-  S.cicli++; S.ciclo = null; S.prova = null;
-  if (S.livello === 1 ? S.cicli >= 1 : occasioni() >= Number(cfg().prove)) { fineSessione(); return; }
-  caption(msg); objective('Torna al tablet'); camera_('stanza');
+/* Tra un momento e l'altro della storia Francesco è libero: gira per casa e sceglie lui se tornare al tablet o alla scatola.
+   L'episodio finisce quando non resta più niente da fare: le occasioni al tablet sono state giocate e la scatola è aperta. */
+function tempoLibero(testo, voce = true) {
+  S.ciclo = null; S.prova = null; setAttivi({});
+  if (tabletFinito() && AIUTO.finita()) { fineSessione(); return; }
   if (tabStato !== 'letto' && tabStato !== 'scrivania') posaTablet('letto');
-  fase = 'prossimo'; testoFase = msg; freeWalk = true; etichette();
+  if (conTablet() && tabletFinito() && !S.bastaTablet) { S.bastaTablet = true; testo = NARRA.bastaTablet(); voce = true; }
+  fase = 'prossimo'; testoFase = testo;
+  caption(testo, voce); objective(obiettivoLibero()); camera_('stanza');
+  busy = false; freeWalk = true; etichette();
 }
+function prossimoCiclo(testo) { S.cicli++; tempoLibero(testo); }
 
-function fineSessione() {
-  clearTimeout(S.ritardo); setAttivi({}); freeWalk = false; fase = null;
-  db.sessions.push({ id: S.id, inizio: S.inizio, fine: new Date().toISOString(), livello: S.livello, aiuto: S.livello === 2 ? S.aiuto : '', gioco: S.giochi.join('+'), prove: S.prove, partite: S.partite }); save();
-  caption(''); objective(''); Rabbia.segnali = false; $('signals').style.display = 'none';
-  $('endLead').textContent = S.livello === 1 ? 'Hai visto come fa ' + N() + ' a calmarsi. La prossima volta decidi tu.' : N() + ' ha guadagnato ' + S.xp + ' XP e ora ha forza ' + forza + '.';
-  overlay('end', true); speak('Missione completata.');
+async function fineSessione() {
+  clearTimeout(S.ritardo); setAttivi({}); freeWalk = false; busy = true; fase = null;
+  const s = S, aiuti = s.prove.filter(t => t.ambito === 'aiuto');
+  db.sessions.push({ id: s.id, inizio: s.inizio, fine: new Date().toISOString(), livello: s.livello, aiuto: s.livello === 2 ? s.aiuto : '', percorso: cfg().percorso, gioco: s.giochi.join('+'), prove: s.prove, partite: s.partite,
+    serrature: s.scatola.serr, grazie: s.grazie || 0, scortesi: s.scortesi || 0 }); save();
+  objective(''); Rabbia.segnali = false; $('signals').style.display = 'none'; camera_('stanza');
+  // il saluto della narratrice: com'è andata con la rabbia, com'è andata con l'aiuto, e l'appuntamento con la prossima sfida
+  const F = NARRA.fine(), frasi = [], bene = s.prove.some(t => !t.ambito && ['indipendente', 'con_aiuto', 'anticipata'].includes(t.tipo));
+  if (conTablet()) frasi.push(s.livello === 1 ? F.modello : bene ? F.buona : F.difficile);
+  if (conEnigmi()) frasi.push(!s.scatola.aperta ? F.scatolaAspetta : aiuti.some(t => ['indipendente', 'con_aiuto', 'anticipata', 'modello_osservato'].includes(t.tipo)) ? (conTablet() ? F.aiuto : F.aiutoSolo) : F.scatolaDaSolo);
+  frasi.push(F.scuola);
+  await sleep(600);
+  for (const t of frasi) { if (S !== s) return; caption(t); await detto(4200); }
+  if (S !== s) return;
+  caption('');
+  const chiusa = conEnigmi() && !s.scatola.aperta;   // la scatola è rimasta chiusa: la giornata finisce, la missione no
+  $('endTitle').textContent = SCRITTE.fineTitolo(!chiusa);
+  $('endLead').textContent = s.livello === 1 && !conEnigmi() ? SCRITTE.fineModello() : SCRITTE.fineXp(s.xp, forza) + (chiusa ? ' ' + SCRITTE.restano(s.scatola.serr) + '.' : '');
+  overlay('end', true);
 }
 function home() {
-  ['anger', 'stats', 'signals'].forEach(i => $(i).style.display = 'none'); caption(''); objective(''); setAttivi({}); zittisci();
+  ['anger', 'stats', 'signals'].forEach(i => $(i).style.display = 'none'); caption(''); objective(''); setAttivi({}); zittisci(); zitto(); AIUTO.chiudi(); $('saltaBtn').style.display = 'none';
   tablet.chiudi(); $('saccoHud').classList.remove('active'); $('torreHud').classList.remove('active'); $('dialogo').classList.remove('active'); overlay('breathOv', false); overlay('disegnoOv', false);
   $('posaBtn').classList.remove('hot', 'freccia'); $('fade').classList.remove('active'); $('flash').style.opacity = 0;
-  $('homeTitle').textContent = 'La cameretta di ' + N();
-  $('homeLead').textContent = 'Una storia da giocare. Quando arriva la rabbia, decidi tu che cosa fa ' + N() + '.';
-  $('loadTitle').textContent = 'La cameretta di ' + N();
+  $('homeTitle').textContent = SCRITTE.homeTitolo(); $('homeKicker').textContent = SCRITTE.homeEpisodio(); $('endKicker').textContent = 'FINE DELL\'' + SCRITTE.homeEpisodio().split(' · ')[0];
+  $('homeLead').textContent = SCRITTE.homeLead();
+  $('loadTitle').textContent = SCRITTE.homeTitolo();
   S = null; fase = null; inPartita = null; portatore = null; Rabbia.segnali = false; Rabbia.tetto = 100;
   seduto = null; P.stop(); P.root.position.set(.3, 0, .2); P.root.rotation.y = .3; P.play('idle'); cuffie.visible = false; bicchiere.visible = false;
   rompiTablet(false); posaTablet('scrivania'); schermoTablet(true); mostraStanza('cameretta'); camera_('stanza', true);
+  AIUTO.scatola.reset(0, conEnigmi());
   Rabbia.set(0, { subito: true });
   overlay('home', true);
 }
@@ -886,6 +988,6 @@ initTerapista({ onClose: () => { if (!S) home(); } });
 requestAnimationFrame(loop);
 carica().then(() => {
   overlay('loading', false); home();
-  if (DEBUG) window.__app = { THREE, scene, camera, renderer, P, volto, room, sal, tablet, L, LS, tabMesh, Rabbia, ATT, debug, mamma, papa, leo, giulia, cuffie, setRabbia, siedi, alzati, cammina, vaiA, posaTablet, camera_, fissa, mostraStanza, attraversa, vaiNellAltraStanza, etichette, visita, ORIG, iniziaSessione, giocaAlTablet, momentoScelta, apriScelte, scelta, premio, prossimoCiclo, calmaRitrovata,
+  if (DEBUG) window.__app = { THREE, scene, camera, renderer, P, volto, room, sal, tablet, L, LS, tabMesh, Rabbia, ATT, debug, mamma, papa, leo, giulia, cuffie, setRabbia, siedi, alzati, cammina, vaiA, posaTablet, camera_, fissa, mostraStanza, attraversa, vaiNellAltraStanza, etichette, visita, arriva, rientra, ORIG, AIUTO, Musica, tempoLibero, iniziaSessione, giocaAlTablet, momentoScelta, apriScelte, scelta, premio, prossimoCiclo, calmaRitrovata,
     get S() { return S; }, get attivi() { return attivi; }, get luogo() { return luogo; }, get fase() { return fase; }, get busy() { return busy; }, get inPartita() { return inPartita; }, snap: () => snapCam = true, scegliOggetto, setTabStato: s => tabStato = s, sacco };
 }).catch(e => { $('loadTitle').textContent = 'Errore di caricamento'; const d = document.createElement('p'); d.className = 'lead'; d.textContent = String(e && e.message || e); $('loading').appendChild(d); console.error(e); });
