@@ -130,8 +130,8 @@ export function vesti(pers, nome) {
 
   /* --- busto: bacino (pantaloni) e torace (maglia) */
   {
-    const ul = wp('LeftUpLeg'), yB = ul.y - K(.02), yS = spine.y + K(.04), rf = Math.max(K(b.fianchi), Math.abs(ul.x - cx) + K(A.gamba) * .55);
-    const g = profilo([[yB - K(.03) - hips.y, rf * .35], [yB - K(.012) - hips.y, rf * .72], [yB - hips.y, rf * .9], ...interpola([[ul.y - hips.y, rf], [yS - hips.y, K(b.vita)]], 5)], { chiudi: true });
+    const ul = wp('LeftUpLeg'), yB = ul.y + K(.005), yS = spine.y + K(.04), rf = Math.max(K(b.fianchi), Math.abs(ul.x - cx) + K(A.gamba) * .55);
+    const g = profilo([[yB - K(.018) - hips.y, rf * .3], [yB - K(.008) - hips.y, rf * .7], [yB - hips.y, rf * .9], ...interpola([[ul.y - hips.y, rf], [yS - hips.y, K(b.vita)]], 5)], { chiudi: true });
     const m = new THREE.Mesh(g, pant); m.position.set(cx, hips.y, cz); m.scale.z = b.prof; metti('Hips', m);
     if (A.pantaloni.cintura) { const c = new THREE.Mesh(new THREE.TorusGeometry(K(b.vita) * 1.01, K(.009), 6, 28), stoffa(A.pantaloni.cintura, { roughness: .5 })); c.rotation.x = Math.PI / 2; c.position.set(cx, spine.y + K(.02), cz); c.scale.y = b.prof; metti('Hips', c); }
   }
@@ -405,7 +405,7 @@ function capelli(A, testa, T, K, mat, sup) {
 const ESPR = {
   felice: { su: .02, ang: -.1, apre: .95, incl: 0, giu: .3, bocca: 'sorriso' },
   normale: { su: 0, ang: 0, apre: .88, incl: 0, giu: .05, bocca: 'neutra' },
-  calmo: { su: .006, ang: -.12, apre: .5, incl: -.08, giu: .35, bocca: 'dolce' },
+  calmo: { su: .006, ang: -.12, apre: .66, incl: -.08, giu: .35, bocca: 'dolce' },
   seccato: { su: -.008, ang: .28, apre: .78, incl: .14, giu: .12, bocca: 'storta' },
   arrabbiato: { su: -.018, ang: .5, apre: .78, incl: .3, giu: .2, bocca: 'denti' },
   furioso: { su: -.024, ang: .62, apre: .85, incl: .38, giu: .2, bocca: 'urlo' },
