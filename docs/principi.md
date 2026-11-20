@@ -121,10 +121,6 @@ Narrazione vocale (italiano), didascalie grandi, fumetti con il nome di chi parl
 ### 2.10 Requisiti per integrare un gioco esterno
 Licenza compatibile (MIT o CC0), funziona offline, ha comandi touch, permette di controllare l'esito (agganci all'intelligenza artificiale degli avversari), può segnalare alla pagina che lo contiene inizio, fine e andamento della partita.
 
-### 2.12 Personaggi con un carattere riconoscibile
-Ogni persona della storia si riconosce a colpo d'occhio e "si comporta" come è fatta: proporzioni (i bambini hanno la testa più grande, gli adulti più piccola), acconciatura, vestiti, colori, e un modo suo di stare fermo (chi è vivace dondola e si guarda intorno di più, chi è calmo meno). Lo stile resta cartoon ma verosimile: niente mascotte, persone credibili di casa. Il viso è la parte più importante per l'ABA: le emozioni devono leggersi bene anche da lontano (sopracciglia, palpebre, bocca, rossore) e anche il corpo le mostra (spalle che salgono, testa bassa, respiro corto), così lo stato interno è uno stimolo visibile e coerente con la barra e con i segnali scritti.
-*Dove:* `js/aspetto.js` (`ASPETTI`, `Viso`), `js/personaggio.js` (`carattereVivo`).
-
 ### 2.11 Tutti i giochi interni allo stesso livello grafico
 Un gioco dentro il gioco vale quanto il più curato tra quelli accanto: se uno sembra un videogioco vero e l'altro una prova tecnica, il secondo smette di essere rinforzante e la regia non è più credibile. Prima di aggiungere un gioco interno lo si confronta, schermata accanto a schermata, con il migliore già presente. Lista di controllo: un cielo e un orizzonte (mai uno sfondo a tinta unita); un terreno con texture e variazioni di colore; una luce con una direzione, calda da una parte e fredda dall'altra, con ombre; vita nella scena (pubblico, bandiere, palloncini, polvere); un effetto per ogni evento importante (scoppio, anello, lampo, tabellone che si aggiorna); un'interfaccia da trasmissione sportiva, con nomi, punteggio e tempo. Vale anche per gli oggetti della stanza che fanno da gioco, come il sacco da boxe: materiali veri, struttura credibile, un effetto a ogni colpo.
 *Dove:* `js/giochi/arena.js`, `js/giochi/blaster.js`, il sacco in `stanza.js` (`saccoColpo`).
@@ -145,6 +141,10 @@ La musica di sottofondo ha due versioni dello stesso tema, una calma e una tesa,
 ### 2.15 Enigmi a difficoltà crescente, con un indizio fisico
 Quattro enigmi di tipo diverso (codice di simboli, circuito, melodia da ripetere, mosaico), in ordine di difficoltà. L'indizio sta su un oggetto del mondo, il biglietto del nonno, e l'aiuto di una persona lo cambia in modo visibile: la macchia sparisce, sul biglietto compaiono le note. Il premio finale non sono punti: è una lettera e una cosa da fare insieme.
 *Dove:* `js/enigmi.js`, `js/scatola.js`, `finale` in `js/aiuto.js`.
+
+### 2.16 Personaggi con un carattere riconoscibile, anche nel viso
+Ogni persona della storia si riconosce a colpo d'occhio e "si comporta" come è fatta: proporzioni (i bambini hanno la testa più grande, gli adulti più piccola), acconciatura, vestiti, colori, e un modo suo di stare fermo (chi è vivace dondola e si guarda intorno di più, chi è calmo meno). Lo stile resta cartoon ma verosimile: niente mascotte, persone credibili di casa. Il viso è la parte più importante per l'ABA: le emozioni devono leggersi bene anche da lontano (sopracciglia, palpebre, bocca, rossore) e anche il corpo le mostra (spalle che salgono, testa bassa, respiro corto), così lo stato interno è uno stimolo visibile e coerente con la barra e con i segnali scritti.
+*Dove:* `js/aspetto.js` (`ASPETTI`, `Viso`), `js/personaggio.js` (`carattereVivo`).
 
 ---
 
