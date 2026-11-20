@@ -21,6 +21,7 @@ import { creaPersona, parla, togli, zittisci, aggiornaFumetti } from './persone.
 import { creaAttivita } from './attivita.js';
 import { initTerapista } from './terapista.js';
 import { load } from './assets.js';
+import { ambiente } from './grafica.js';
 
 const DEBUG = new URLSearchParams(location.search).has('debug');
 
@@ -32,6 +33,7 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadow
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
 renderer.setClearColor(0x000000, 0);
 const scene = new THREE.Scene();
+ambiente(renderer, scene);   // luce riflessa e taratura dei colori (grafica.js)
 const camera = new THREE.PerspectiveCamera(40, 1, .05, 60);
 let W = 1, H = 1;
 function resize() { W = innerWidth; H = innerHeight; renderer.setSize(W, H, false); camera.aspect = W / H; camera.updateProjectionMatrix(); }
@@ -87,9 +89,11 @@ async function carica() {
   freccia.rotation.x = Math.PI; freccia.visible = false; scene.add(freccia);
   // cuffie per la musica (agganciate alla testa) e bicchiere d'acqua (agganciato alla mano)
   { const nero = m({ color: 0x23272f }), rosso = m({ color: 0xe8453c });
-    P.root.updateMatrixWorld(true); const t = P.punto('Head'); cuffie.position.set(t.x, t.y + .17, t.z);
-    const arco = new THREE.Mesh(new THREE.TorusGeometry(.228, .019, 8, 28, Math.PI), nero); arco.scale.y = 1.12; arco.position.z = -.03; cuffie.add(arco);
-    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.075, .075, .05, 20), rosso); p.rotation.z = Math.PI / 2; p.position.set(s * .225, -.02, -.03); p.castShadow = true; cuffie.add(p); }
+    // misure della testa disegnata (aspetto.js); senza, quelle del vecchio modello a blocchi
+    const mt = P.misure || { testaY: .17, testaZ: 0, rx: .2, ry: .2, rz: .2 }, rc = mt.rx + .022;
+    P.root.updateMatrixWorld(true); const t = P.punto('Head'); cuffie.position.set(t.x, t.y + mt.testaY, t.z + mt.testaZ);
+    const arco = new THREE.Mesh(new THREE.TorusGeometry(rc, .016, 8, 28, Math.PI), nero); arco.scale.y = (mt.ry + .03) / rc; arco.position.z = -.01; cuffie.add(arco);
+    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .045, 20), rosso); p.rotation.z = Math.PI / 2; p.position.set(s * (mt.rx + .012), -mt.ry * .1, -.01); p.castShadow = true; cuffie.add(p); }
     scene.add(cuffie); P.ossa.Head.attach(cuffie); cuffie.visible = false;
     const b = new THREE.Mesh(new THREE.CylinderGeometry(.035, .028, .1, 16), new THREE.MeshStandardMaterial({ color: 0xcfe8ff, transparent: true, opacity: .75, roughness: .1 }));
     bicchiere.add(b); P.punto('RightHand', bicchiere.position); bicchiere.position.y += .04; scene.add(bicchiere); P.ossa.RightHand.attach(bicchiere); bicchiere.visible = false; }

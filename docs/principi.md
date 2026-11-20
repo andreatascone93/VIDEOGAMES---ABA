@@ -101,6 +101,10 @@ Narrazione vocale (italiano), didascalie grandi, fumetti con il nome di chi parl
 ### 2.10 Requisiti per integrare un gioco esterno
 Licenza compatibile (MIT o CC0), funziona offline, ha comandi touch, permette di controllare l'esito (agganci all'intelligenza artificiale degli avversari), può segnalare alla pagina che lo contiene inizio, fine e andamento della partita.
 
+### 2.12 Personaggi con un carattere riconoscibile
+Ogni persona della storia si riconosce a colpo d'occhio e "si comporta" come è fatta: proporzioni (i bambini hanno la testa più grande, gli adulti più piccola), acconciatura, vestiti, colori, e un modo suo di stare fermo (chi è vivace dondola e si guarda intorno di più, chi è calmo meno). Lo stile resta cartoon ma verosimile: niente mascotte, persone credibili di casa. Il viso è la parte più importante per l'ABA: le emozioni devono leggersi bene anche da lontano (sopracciglia, palpebre, bocca, rossore) e anche il corpo le mostra (spalle che salgono, testa bassa, respiro corto), così lo stato interno è uno stimolo visibile e coerente con la barra e con i segnali scritti.
+*Dove:* `js/aspetto.js` (`ASPETTI`, `Viso`), `js/personaggio.js` (`carattereVivo`).
+
 ### 2.11 Tutti i giochi interni allo stesso livello grafico
 Un gioco dentro il gioco vale quanto il più curato tra quelli accanto: se uno sembra un videogioco vero e l'altro una prova tecnica, il secondo smette di essere rinforzante e la regia non è più credibile. Prima di aggiungere un gioco interno lo si confronta, schermata accanto a schermata, con il migliore già presente. Lista di controllo: un cielo e un orizzonte (mai uno sfondo a tinta unita); un terreno con texture e variazioni di colore; una luce con una direzione, calda da una parte e fredda dall'altra, con ombre; vita nella scena (pubblico, bandiere, palloncini, polvere); un effetto per ogni evento importante (scoppio, anello, lampo, tabellone che si aggiorna); un'interfaccia da trasmissione sportiva, con nomi, punteggio e tempo. Vale anche per gli oggetti della stanza che fanno da gioco, come il sacco da boxe: materiali veri, struttura credibile, un effetto a ogni colpo.
 *Dove:* `js/giochi/arena.js`, `js/giochi/blaster.js`, il sacco in `stanza.js` (`saccoColpo`).
@@ -118,7 +122,9 @@ Pagina web senza passaggi di compilazione per il gioco principale: `index.html` 
 | `core.js` | configurazione, salvataggio, audio, didascalie, tween, dissolvenza a nero | sì |
 | `assets.js` | caricamento e cache dei glTF, cloni con scheletro | sì |
 | `personaggio.js` | personaggio animato: camminata, animazioni con dissolvenza, pose composte | sì |
-| `volto.js` | espressioni del viso dipinte sulla texture | sì, per i personaggi Kenney |
+| `aspetto.js` | aspetto dei personaggi costruito in codice sullo scheletro Kenney: corpo, vestiti, capelli, viso 3D con espressioni (`set(umore, rossore)`, `parla(on)`) | sì: un personaggio nuovo è una voce in `ASPETTI` |
+| `grafica.js` | luce riflessa d'ambiente (PMREM da una stanza finta) e taratura delle luci | sì |
+| `volto.js` | espressioni del viso dipinte sulla texture | solo per i vecchi personaggi Kenney con skin |
 | `rabbia.js` | stato emotivo continuo 0–100 con zone, picchi e soglie | sì, per ogni emozione a livelli |
 | `persone.js` | altre persone (stesso scheletro, altra skin e statura) e fumetti | sì |
 | `terapista.js` | impostazioni, grafico, tabella, esportazione | sì, cambiando i campi |
@@ -135,6 +141,9 @@ Si possono creare pose nuove unendo tracce di clip diverse: "seduto rilassato" =
 
 ### 3.5 Espressioni sulla texture
 Si copia l'atlante della skin in un canvas, si coprono i tratti originali con il colore della pelle, si applica il rossore con `multiply` e si disegnano i tratti nuovi. Si ridisegna solo quando cambia l'umore o l'intensità (arrotondata a decimi). Le coordinate del viso sono nel modulo.
+
+### 3.5b Personaggi disegnati in codice sullo stesso scheletro
+Lo scheletro e le animazioni Kenney restano (camminata, corsa, seduto, pugno, calcio…), la pelle a blocchi si nasconde e ogni osso riceve forme morbide (tubi arrotondati, solidi di rotazione per il busto, sfere deformate per la testa) agganciate con `attach` nella posa di legame. Vantaggi: nessun file nuovo da caricare, animazioni condivise da tutti, proporzioni e vestiti diversi per ogni personaggio, e un viso vero in 3D: occhi con iride dipinta che si muovono, palpebre che sbattono e si inclinano, sopracciglia mobili, bocca e guance disegnate su una "maschera" che ha la stessa forma della testa (`formaTesta`). Lo strato di carattere (respiro, dondolio, spalle tese, testa che accompagna le parole) si somma all'animazione dopo il mixer e si toglie prima del fotogramma successivo, così non si accumula. Attenzione ai segni: con il personaggio girato verso +z, il suo lato sinistro è +x; per abbassare l'angolo interno di sopracciglio e palpebra la rotazione z è `lato × angolo`.
 
 ### 3.6 Arredi e misure
 Mobili KayKit (CC0) in scala 0,6–0,75 e Kenney Furniture Kit (CC0) portati a una misura precisa con `Box3`. Niente a occhio: `Box3` per appoggiare gli oggetti e definire gli ostacoli, un raggio dall'alto (`Raycaster`) per l'altezza vera di una seduta, perché il riquadro di un divano comprende schienale e braccioli.
