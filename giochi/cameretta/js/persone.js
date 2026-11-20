@@ -43,7 +43,7 @@ export async function parla(p, testo, { ms = 0, voce = true, resta = false } = {
 export function aggiornaFumetti(camera, W, H) {
   for (const [p, el] of attivi) {
     p.punto('Head', v); v.y += .36 * ((p.altezza || 1.36) / 1.36); v.project(camera);
-    el.style.left = clamp((v.x + 1) / 2 * W, 150, W - 150) + 'px'; el.style.top = Math.max(70, (1 - v.y) / 2 * H) + 'px';
+    el.style.left = clamp((v.x + 1) / 2 * W, 150, W - 150) + 'px'; el.style.top = Math.max(el.offsetHeight + 10, 70, (1 - v.y) / 2 * H) + 'px';   // un fumetto lungo non esce dall'alto dello schermo
     el.style.visibility = p.root.visible ? '' : 'hidden';
   }
 }

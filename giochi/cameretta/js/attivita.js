@@ -6,8 +6,10 @@
 //   costruzioni  una torre di cubi insieme agli altri bambini, a turno
 // Ogni attività riceve un contesto `c` dal gioco e chiama c.calma(k) con k da 0 a 1 man mano che procede.
 import * as THREE from 'three';
-import { $, cfg, N, sleep, clamp, tone, noise, jingle, caption, overlay, tween, toast, speak } from './core.js';
-import { parla, togli } from './persone.js';
+import { $, cfg, sleep, clamp, tone, noise, jingle, caption, detto, overlay, tween, toast } from './core.js';
+import { togli } from './persone.js';
+import { dici as parla } from './narrazione.js';
+import { NARRA, SCRITTE, VOCI, COMMENTI_TORRE } from './testi.js';
 import { TORRE, nuovoCubo } from './salone.js';
 
 export function creaAttivita(c) {
@@ -25,8 +27,8 @@ export function creaAttivita(c) {
     await c.siedi(L.poltronaSeduto);
     c.cuffie.visible = true; tone(740, .07, 'triangle', .05);
     c.camera_('pausa');
-    caption(N() + ' mette le cuffie e ascolta la sua musica preferita. Respira a tempo.');
-    await sleep(1800);
+    caption(NARRA.musica());
+    await detto(1800);
     overlay('breathOv', true);
     const n = Math.max(1, Number(cfg().respiri) - (c.breve() ? 1 : 0)), b = $('breath'), tx = $('breathText'), cnt = $('breathCount');
     const ferma = suona();
@@ -51,7 +53,7 @@ export function creaAttivita(c) {
     c.room.foglio.visible = true;
     P.play('interactStanding', { speed: .45 });
     c.fissa([-.3, 2.1, 1.5], [1.25, .85, -1.5]);
-    caption(N() + ' prende un foglio e le matite. Disegna quello che vuoi: mentre disegni la rabbia scende.');
+    caption(NARRA.disegno());
     await sleep(1500);
     const cv = $('disCanvas'), g = cv.getContext('2d');
     g.fillStyle = '#fdfdf8'; g.fillRect(0, 0, cv.width, cv.height); g.lineCap = g.lineJoin = 'round'; g.lineWidth = 9;
@@ -71,7 +73,7 @@ export function creaAttivita(c) {
     const tic = setInterval(() => {
       const disegna = performance.now() - ultimo < 900;
       k = Math.min(1, k + .2 / T * (disegna ? 1.5 : .55)); c.calma(k); barra.style.width = (k * 100) + '%';
-      if (k >= 1 && !pronto) { pronto = true; fine.classList.add('pronto'); tone(660, .15, 'triangle', .06); caption(N() + ' è più calmo. Può finire il disegno quando vuole.', false); setTimeout(chiudi, 25000); }
+      if (k >= 1 && !pronto) { pronto = true; fine.classList.add('pronto'); tone(660, .15, 'triangle', .06); caption(SCRITTE.disegnoPronto(), false); setTimeout(chiudi, 25000); }
     }, 200);
     await finito; clearInterval(tic);
     cv.onpointerdown = cv.onpointermove = cv.onpointerup = cv.onpointercancel = null;
@@ -81,8 +83,8 @@ export function creaAttivita(c) {
     const m = c.room.carta.material; if (m.map) m.map.dispose(); m.map = t; m.needsUpdate = true;
     overlay('disegnoOv', false); c.room.foglio.visible = false; c.room.disegnoMuro.visible = true;
     P.play('idle'); c.camera_('stanza');
-    caption(N() + ' appende il disegno al muro.');
-    await sleep(2200);
+    caption(NARRA.disegnoAppeso());
+    await detto(2200);
   }
 
   /* ---------------------------------------------------------------- parlare con la mamma */
@@ -95,30 +97,30 @@ export function creaAttivita(c) {
     });
   }
   async function mamma() {
-    const M = c.mamma, cosaDice = 'Cosa dice ' + N() + '?';
+    const M = c.mamma, cosaDice = SCRITTE.cosaDice(), F = VOCI.f, MA = VOCI.mamma;
     await c.vaiA(LS.daMamma);
     c.fissa([-.6, 1.75, 1.7], [-1.25, .9, -1.9]);
     caption('');
-    const D1 = ['Ho perso tante volte e sono arrabbiato.', 'Ho bisogno di una pausa. Posso stare un po\' qui con te?'];
+    const D1 = F.mamma1();
     const a = await battute(cosaDice, D1);
     await parla(P, D1[a]);
-    await parla(M, a === 0 ? 'Capisco. Perdere tante volte di fila fa arrabbiare. Vieni, siediti qui.' : 'Certo. Vieni, siediti qui vicino a me.');
+    await parla(M, MA.capisco()[a]);
     await c.siedi(LS.divanoF); c.calma(c.breve() ? .5 : .35);
     if (!c.breve()) {
-      await parla(M, 'Vuoi un bicchiere d\'acqua o preferisci raccontarmi com\'è andata?');
-      const D2 = ['Un po\' d\'acqua, grazie.', 'Ti racconto la partita.'];
+      await parla(M, MA.acquaO());
+      const D2 = F.mamma2();
       const b = await battute(cosaDice, D2);
       await parla(P, D2[b]);
-      if (b === 0) { caption(N() + ' beve piano. Il cuore rallenta.'); c.bevi(true); await sleep(3200); c.bevi(false); }
-      else { caption(N() + ' racconta la partita alla mamma. Parlarne lo fa sentire più leggero.'); await sleep(2600); await parla(M, 'Eri a un passo dal vincere. Ci sta che ti sei arrabbiato.'); }
+      if (b === 0) { caption(NARRA.beve()); c.bevi(true); await detto(3200); c.bevi(false); }
+      else { caption(NARRA.racconta()); await detto(2600); await parla(M, MA.aUnPasso()); }
       c.calma(.7); caption('');
     }
-    await parla(M, 'Come ti senti adesso?');
-    const D3 = ['Meglio.', 'Ancora un po\' arrabbiato, ma sta passando.'];
+    await parla(M, MA.comeTiSenti());
+    const D3 = F.mamma3();
     const d = await battute(cosaDice, D3);
     await parla(P, D3[d]);
     c.calma(1);
-    await parla(M, d === 0 ? 'Si vede. Quando vuoi, torna pure a giocare.' : 'Va bene così. Resta qui finché ti va.');
+    await parla(M, MA.dopo()[d]);
     await c.alzatiAnimato();
   }
 
@@ -131,8 +133,8 @@ export function creaAttivita(c) {
     await c.siedi(LS.terraF);
     c.fissa([TORRE.x + .15, 1.7, TORRE.z + 3.5], [TORRE.x, .7, TORRE.z]);
     caption('');
-    await parla(leo, 'Ciao ' + N() + '! Ci aiuti a fare la torre?');
-    caption('Tocca METTI IL PEZZO quando il cubo è sopra la torre. Si gioca a turno.', false);
+    await parla(leo, VOCI.leo.torre());
+    caption(SCRITTE.torre(), false);
     const tot = c.breve() ? 6 : 10, miei = tot / 2;
     $('tTot').textContent = tot; $('tPezzi').textContent = 0; $('torreHud').classList.add('active');
     let pezzi = 0, messi = 0, xTop = 0, occupato = false, t0 = performance.now(), raf = 0, cubo = null, fine;
@@ -142,7 +144,7 @@ export function creaAttivita(c) {
     const scarto = () => cubo ? cubo.position.x - (TORRE.x + xTop) : 9;
     c.debug.torre = scarto;
     const appoggia = (m, x) => { stanza.remove(m); T.add(m); m.position.set(x, pezzi * LATO + LATO / 2, 0); m.rotation.y = (Math.random() - .5) * .25; pezzi++; $('tPezzi').textContent = pezzi; tone(300 + pezzi * 40, .12, 'triangle', .1); noise(.06, .2, 900); };
-    const commenti = ['Bel pezzo!', 'Sta venendo alta!', 'Piano… perfetto.', 'Ancora uno!'];
+    const commenti = COMMENTI_TORRE;
     async function metti() {
       if (occupato || !cubo) return; occupato = true;
       const m = cubo, dx = scarto(), x0 = m.position.x, y0 = m.position.y; cubo = null;
@@ -176,8 +178,8 @@ export function creaAttivita(c) {
     $('torreHud').classList.remove('active'); caption('');
     jingle.win(); toast('TORRE FINITA!', 1800);
     togli(leo); togli(giulia);
-    await parla(giulia, 'Finita! È altissima.');
-    await parla(leo, 'Dopo ne facciamo una ancora più alta?');
+    await parla(giulia, VOCI.giulia.finita());
+    await parla(leo, VOCI.leo.ancora());
     await c.alzatiAnimato();
   }
 

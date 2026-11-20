@@ -71,9 +71,9 @@
   #fade.active { opacity: 1; pointer-events: auto; }
   #fade span { font-size: clamp(26px, 4.5vw, 46px); font-weight: 900; letter-spacing: .04em; color: #eef3fb; }
   /* battute tra cui scegliere quando Francesco parla */
-  #dialogo { position: fixed; z-index: 8; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(760px, 94vw); display: none; flex-direction: column; gap: 10px; }
+  #dialogo { position: fixed; z-index: 8; left: 50%; bottom: 14px; transform: translateX(-50%); width: min(760px, 94vw); display: none; flex-direction: column; gap: 8px; }
   #dialogo.active { display: flex; }
-  #dialogo .t { font-size: 12px; font-weight: 800; letter-spacing: .14em; color: var(--oro); text-align: center; text-shadow: 0 2px 6px rgba(0,0,0,.6); }
+  #dialogo .t { align-self: center; font-size: 12px; font-weight: 800; letter-spacing: .14em; color: var(--oro); text-align: center; background: rgba(16,22,36,.88); padding: 6px 14px; border-radius: 999px; }
   .batt { background: #fff; color: #1b2538; border-radius: 14px; padding: 13px 18px; font-size: clamp(16px, 2.1vw, 21px); font-weight: 700; text-align: left; box-shadow: 0 6px 0 #b8c2d3, 0 12px 24px rgba(0,0,0,.35); }
   .batt:active { transform: translateY(3px); box-shadow: 0 3px 0 #b8c2d3; }
   /* disegno */
@@ -194,6 +194,70 @@
     #signals { top: 98px; }
     #posaBtn { left: 2vw; bottom: auto; top: calc(34vh - 70px); width: 46vw; height: 54px; }
   }
+
+  /* presentazione: si può saltare */
+  #saltaBtn { position: fixed; z-index: 13; right: 16px; bottom: 16px; display: none; padding: 10px 18px; border-radius: 12px; font-size: 15px; font-weight: 800; letter-spacing: .06em; color: #fff; background: rgba(16,22,36,.82); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35); }
+  #attesa { position: fixed; z-index: 8; top: 40%; left: 50%; transform: translate(-50%, -50%); padding: 12px 22px; font-size: 24px; font-weight: 800; display: none; }
+
+  /* la scatola degli enigmi: il pannello sta a destra, Francesco resta visibile a sinistra */
+  #pannello { left: auto; right: 2vw; top: 3vh; bottom: 3vh; width: 62vw; padding: 0; z-index: 9; align-items: stretch; justify-content: flex-start; text-align: left; }
+  #pannello .cornice { display: flex; flex-direction: column; height: 100%; border-radius: 24px; padding: 16px 18px; gap: 12px;
+    background: linear-gradient(160deg, #6a4526, #3a2413); box-shadow: 0 0 0 3px #c8973f, 0 26px 60px rgba(0,0,0,.6); }
+  #pannello .testa { display: flex; justify-content: space-between; align-items: center; padding-right: 50px; font-weight: 900; font-size: 14px; letter-spacing: .14em; color: #ffd36a; }
+  #pannello .testa span + span { color: #d9c3a0; }
+  #pannello .corpo { flex: 1; display: flex; gap: 16px; min-height: 0; }
+  #pIndizioBox { width: 34%; display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 800; letter-spacing: .12em; color: #d9c3a0; }
+  #pIndizio { width: 100%; border-radius: 6px; box-shadow: 0 6px 16px rgba(0,0,0,.4); transform: rotate(-1.2deg); }
+  #pEnigma { flex: 1; background: #0e1522; border-radius: 16px; padding: 14px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 0 2px #2c3a50; transition: opacity .3s, filter .3s; overflow: hidden; }
+  #pannello.rotto #pEnigma { opacity: .35; pointer-events: none; filter: grayscale(1); }
+  #pannello .azioni { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .azione { position: relative; padding: 12px 8px; border-radius: 12px; font-size: clamp(13px, 1.5vw, 17px); font-weight: 900; color: #fff; background: rgba(16,22,36,.92);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,.35), 0 6px 16px rgba(0,0,0,.3); }
+  .azione:active { transform: translateY(2px); }
+  .azione:disabled { opacity: .45; }
+  .azione.hot { box-shadow: inset 0 0 0 3px var(--verde), 0 0 0 6px rgba(63,207,122,.3); animation: posapulse 1s ease-in-out infinite; }
+  .azione.freccia::before { content: "▼"; position: absolute; left: 50%; top: -36px; margin-left: -12px; font-size: 26px; color: var(--verde); animation: giu .7s ease-in-out infinite alternate; }
+  body.inpannello #caption { left: 14px; transform: none; width: min(33vw, 300px); font-size: 16px; text-align: left; bottom: 14px; padding: 12px 16px; }
+  body.inpannello #objective, body.inpannello #stats { opacity: 0; }
+  body.inpannello #anger, body.inpannello #signals { width: 33vw; max-width: 250px; }
+  /* gli enigmi */
+  .enigma { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+  .en-tit { font-size: clamp(15px, 1.8vw, 19px); font-weight: 800; color: #cfe0ff; text-align: center; }
+  .en-msg { min-height: 1.4em; font-size: clamp(14px, 1.6vw, 18px); font-weight: 800; color: #9fb0c8; text-align: center; }
+  .en-msg.ok { color: var(--verde); } .en-msg.ko { color: #ff7a7a; }
+  .en-codice { display: flex; gap: 10px; }
+  .en-slot { width: 64px; height: 64px; border-radius: 12px; background: #1a2433; box-shadow: inset 0 0 0 2px #33445c; display: flex; align-items: center; justify-content: center; }
+  .en-slot.on { box-shadow: inset 0 0 0 2px #4dabff; }
+  .en-tasti { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .en-tasto { width: clamp(64px, 8vw, 84px); height: clamp(64px, 8vw, 84px); border-radius: 14px; background: #263246; box-shadow: 0 5px 0 #121a26; display: flex; align-items: center; justify-content: center; }
+  .en-tasto:active { transform: translateY(4px); box-shadow: 0 1px 0 #121a26; }
+  .en-griglia { display: grid; grid-template-columns: 34px repeat(3, clamp(70px, 9vw, 100px)) 34px; grid-template-rows: repeat(3, clamp(70px, 9vw, 100px)); gap: 4px; align-items: center; }
+  .en-pezzo { width: 100%; height: 100%; padding: 0; background: none; }
+  .en-pezzo svg { width: 100%; height: 100%; display: block; }
+  .en-capo { font-size: 24px; text-align: center; }
+  .en-capo.in { grid-row: 2; grid-column: 1; } .en-capo.out { grid-row: 3; grid-column: 5; opacity: .5; } .en-capo.out.on { opacity: 1; }
+  .en-apri { padding: 12px 40px; border-radius: 12px; font-size: 20px; font-weight: 900; background: linear-gradient(180deg, #ffd96a, #f5b82e); color: #10203a; box-shadow: 0 5px 0 #b9831a; }
+  .en-note { display: flex; gap: 8px; } .en-note i { width: 22px; height: 22px; border-radius: 50%; background: #263246; box-shadow: inset 0 0 0 2px #33445c; } .en-note i.ok { box-shadow: inset 0 0 0 2px #fff; }
+  .en-campane { display: flex; gap: 14px; }
+  .en-campana { width: clamp(70px, 9vw, 104px); height: clamp(84px, 11vw, 124px); border-radius: 50% 50% 16px 16px; background: var(--c); opacity: .62; box-shadow: 0 6px 0 rgba(0,0,0,.4); transition: opacity .08s, transform .08s; }
+  .en-campana.on { opacity: 1; transform: scale(1.08); box-shadow: 0 0 26px var(--c); }
+  .en-mosaico { display: grid; grid-template-columns: repeat(3, clamp(74px, 9.5vw, 104px)); gap: 4px; padding: 6px; background: #0a0f1a; border-radius: 10px; }
+  .en-tessera { padding: 0; aspect-ratio: 1; background: #1a2433; border-radius: 6px; overflow: hidden; font-size: 34px; font-weight: 900; color: #55657f; }
+  .en-tessera canvas { width: 100%; height: 100%; display: block; }
+  .en-tessera.vuota { box-shadow: inset 0 0 0 3px #55657f; background: repeating-linear-gradient(45deg, #141c29, #141c29 8px, #1a2433 8px, #1a2433 16px); }
+  /* la lettera del nonno */
+  #lettera { background: rgba(8, 12, 22, .72); z-index: 11; }
+  #lettera .foglio { max-width: min(640px, 90vw); background: #f7ecd0; color: #2a2118; border-radius: 6px; padding: 28px 32px 22px; box-shadow: 0 24px 60px rgba(0,0,0,.6); transform: rotate(-.8deg); text-align: left; }
+  #lettera .foglio p { margin: 0 0 18px; font-size: clamp(17px, 2.2vw, 22px); line-height: 1.5; font-family: Georgia, "Times New Roman", serif; font-style: italic; }
+  #lettera .regalo { display: flex; gap: 10px; margin-bottom: 18px; }
+  #lettera .regalo span { flex: 1; padding: 10px 12px; border-radius: 8px; color: #fff; font-weight: 900; font-size: 14px; letter-spacing: .08em; text-align: center; border: 2px dashed rgba(255,255,255,.7); }
+  @media (max-width: 1100px) and (min-aspect-ratio: 1/1) { #pannello .testa span + span { display: none; } }
+  @media (max-aspect-ratio: 1/1) {
+    #pannello { left: 2vw; right: 2vw; width: auto; top: 30vh; bottom: 2vh; }
+    #pannello .corpo { flex-direction: column; } #pIndizioBox { width: 100%; flex-direction: row; align-items: center; } #pIndizio { width: 40%; }
+    body.inpannello #caption { width: 60vw; left: 38vw; top: 14px; bottom: auto; }
+    #pannello .azioni { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -210,6 +274,8 @@
 <div id="labels"></div>
 <button id="posaBtn">POSA IL TABLET</button>
 <div id="dialogo"></div>
+<div class="hud panel" id="attesa"></div>
+<button id="saltaBtn">SALTA ▸</button>
 <div id="fade"><span></span></div>
 
 <button id="gear" aria-label="Area terapista">⚙</button>
@@ -221,7 +287,7 @@
 </section>
 
 <section class="overlay" id="home">
-  <div class="kicker">UNA STORIA DA GIOCARE</div>
+  <div class="kicker" id="homeKicker">EPISODIO 1 · UN POMERIGGIO A CASA</div>
   <h1 id="homeTitle">La cameretta di Francesco</h1>
   <p class="lead" id="homeLead"></p>
   <button class="big" id="startBtn">GIOCA</button>
@@ -274,9 +340,34 @@
   <div class="btns"><button class="hit" id="bPugno">PUGNO</button><button class="hit k" id="bCalcio">CALCIO</button></div>
 </div>
 
+<section class="overlay" id="pannello">
+  <div class="cornice">
+    <div class="testa"><span id="pTitolo">Serratura</span><span>LA SCATOLA DEL NONNO</span></div>
+    <div class="corpo">
+      <div id="pIndizioBox">IL BIGLIETTO DEL NONNO<canvas id="pIndizio" width="512" height="326"></canvas></div>
+      <div id="pEnigma"></div>
+    </div>
+    <div class="azioni">
+      <button class="azione" id="bAiuto">Chiedi aiuto</button>
+      <button class="azione" id="bRespira">Fai un respiro</button>
+      <button class="azione" id="bMolla">Lascia perdere</button>
+      <button class="azione" id="bColpisci">Sbatti la scatola</button>
+      <button class="azione" id="bVia">Alzati</button>
+    </div>
+  </div>
+</section>
+
+<section class="overlay" id="lettera">
+  <div class="foglio">
+    <p id="letteraTesto"></p>
+    <div class="regalo"><span style="background:#ff7a59">PISTA DEI KART · 1 INGRESSO</span><span style="background:#3b8cf0">PISTA DEI KART · 1 INGRESSO</span></div>
+    <button class="big" id="letteraOk">CONTINUA</button>
+  </div>
+</section>
+
 <section class="overlay" id="end">
-  <div class="kicker">FINE DELLA SESSIONE</div>
-  <h1>Missione completata</h1>
+  <div class="kicker" id="endKicker">FINE DELL'EPISODIO 1</div>
+  <h1 id="endTitle">Missione completata</h1>
   <p class="lead" id="endLead"></p>
   <button class="big" id="endBtn">TORNA AL MENU</button>
 </section>
@@ -292,7 +383,7 @@
   <h2>Andamento</h2>
   <div id="advice"></div>
   <svg id="chart" viewBox="0 0 760 220"></svg>
-  <p class="note">Percentuale di occasioni in cui il giocatore posa il tablet da solo e sceglie un'altra attività (livelli 2–4). Linea tratteggiata: criterio di padronanza.</p>
+  <p class="note">Percentuale di occasioni affrontate da solo (livelli 2–4). <b style="color:#3b82c4">Blu</b>: posa il tablet e sceglie un'altra attività. <b style="color:#e8863a">Arancione</b>: chiede aiuto quando una serratura non si apre. Linea tratteggiata: criterio di padronanza.</p>
   <h2>Sessioni</h2>
   <div id="sessTable"></div>
   <div class="row">

@@ -7,13 +7,20 @@ export const DEFAULT_CFG = {
   secondiAttivita: 25,    // durata minima delle altre attività che calmano (disegno)
   saccoCalma: true,       // il sacco da boxe è anche una scelta per calmarsi, oltre che un gioco premio
   secondiPremio: 30, secondiBlaster: 40, secondiAiutoRitardato: 10,
-  criterio: 80, sessioniCriterio: 3, voce: true, pin: '1234'
+  percorso: 'tutto',      // tutto | tablet | enigmi: che cosa c'è nell'episodio (la rabbia al tablet, la scatola degli enigmi, o tutti e due)
+  difficili: 2,           // quante serrature della scatola non si aprono da soli (le ultime): sono le occasioni per chiedere aiuto
+  provaPrima: true,       // chi chiede aiuto senza aver provato nemmeno una volta viene invitato a provare
+  attesaAiuto: 6,         // livello 4: secondi di attesa tra la richiesta e l'arrivo di chi aiuta
+  criterio: 80, sessioniCriterio: 3,
+  voce: 'tutte',          // tutte | narratrice | no: la narratrice e i personaggi, solo la narratrice, nessuna voce
+  musica: true, pin: '1234'
 };
 const STORE = 'giochiAba.cameretta.v2', CFG_V = 2;
 export const db = (() => {
   try { const d = JSON.parse(localStorage.getItem(STORE)); if (d && d.cfg) { d.cfg = { ...DEFAULT_CFG, ...d.cfg };
       // versione 2 delle impostazioni: il sacco è anche una scelta per calmarsi; quelle salvate prima si allineano una volta sola
       if (!(d.cfgV >= CFG_V)) { d.cfg.saccoCalma = true; d.cfgV = CFG_V; }
+      if (typeof d.cfg.voce === 'boolean') d.cfg.voce = d.cfg.voce ? 'tutte' : 'no';   // prima la voce era solo accesa o spenta
       return d; } } catch (e) {}
   return { cfg: { ...DEFAULT_CFG }, cfgV: CFG_V, sessions: [] };
 })();
@@ -42,11 +49,14 @@ export function noise(dur = .3, vol = .2, freq = 800) {
 }
 export const jingle = { win: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, .22, 'triangle', .09, i * .12)), lose: () => [392, 330, 262].forEach((f, i) => tone(f, .3, 'sawtooth', .05, i * .18)), click: () => tone(620, .05, 'triangle', .06) };
 
-export function speak(t) {
-  if (!cfg().voce || !('speechSynthesis' in window)) return;
-  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'it-IT'; u.rate = 1; speechSynthesis.speak(u); } catch (e) {}
-}
-export function caption(t, voice = true) { const c = $('caption'); c.textContent = t || ''; c.style.display = t ? 'block' : 'none'; if (t && voice) speak(t); }
+// La voce: chi parla davvero è js/narrazione.js (registrazioni naturali, con la voce del dispositivo come riserva), che si
+// presenta qui con usaVoce(). speak() e caption() restituiscono una promessa che si chiude quando la frase è stata detta.
+let motoreVoce = null, ultimaVoce = Promise.resolve();
+export function usaVoce(f) { motoreVoce = f; }
+export function speak(t, opz) { ultimaVoce = motoreVoce ? motoreVoce(t, opz) : Promise.resolve(); return ultimaVoce; }
+export function caption(t, voice = true, opz) { const c = $('caption'); c.textContent = t || ''; c.style.display = t ? 'block' : 'none'; return t && voice ? speak(t, opz) : Promise.resolve(); }
+// aspetta che l'ultima frase sia stata detta, e in ogni caso almeno `min` millisecondi (il tempo di leggerla, se la voce è spenta)
+export async function detto(min = 0, max = 30000) { const u = ultimaVoce; await Promise.race([Promise.all([u, sleep(min)]), sleep(max)]); }
 export function objective(t) { const o = $('objective'); o.textContent = t || ''; o.style.display = t ? 'block' : 'none'; }
 export function toast(t, ms = 1600) { const el = $('toast'); el.textContent = t; el.getAnimations().forEach(a => a.cancel()); el.animate([{ opacity: 0, transform: 'translate(-50%,-30%) scale(.7)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: .15 }, { opacity: 1, transform: 'translate(-50%,-55%) scale(1)', offset: .8 }, { opacity: 0, transform: 'translate(-50%,-70%) scale(1)' }], { duration: ms, easing: 'ease-out' }); }
 export function heartbeat() { tone(62, .16, 'sine', .35); tone(55, .2, 'sine', .3, .2); }
