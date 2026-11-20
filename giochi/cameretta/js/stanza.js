@@ -1,5 +1,6 @@
 // La cameretta: pareti, pavimento, luci e mobili KayKit (CC0). Unità in metri.
 import * as THREE from 'three';
+import { luci } from './grafica.js';
 import { model } from './assets.js';
 
 export const STANZA = { x0: -2.6, x1: 2.6, z0: -2.2, z1: 2.2, h: 2.6 };
@@ -91,10 +92,11 @@ export async function costruisciStanza(scene) {
   finestra(g, -.55, 1.55, R.z0 + .01, mat);
 
   // luci
-  scene.add(new THREE.HemisphereLight(0xfff6ea, 0x8a7560, 1.4));
+  const emisfera = new THREE.HemisphereLight(0xfff6ea, 0x8a7560, 1.4); scene.add(emisfera);
   const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(-1.5, 5, 3.5); sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: .5, far: 15 }); sun.shadow.bias = -.0005; sun.shadow.normalBias = .02; scene.add(sun); scene.add(sun.target);
   const caldo = new THREE.PointLight(0xffc98a, 6, 5, 1.6); caldo.position.set(-2, 1.9, 1.4); g.add(caldo);
+  luci(scene, { emisfera, sole: sun });
 
   const put = async (file, x, y, z, ry = 0, s = S) => { const o = await model('mobili/' + file + '.gltf', { scale: s }); o.position.set(x, y, z); o.rotation.y = ry; g.add(o); return o; };
   const refs = {};

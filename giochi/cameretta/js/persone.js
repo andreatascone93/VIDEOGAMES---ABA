@@ -4,10 +4,13 @@ import * as THREE from 'three';
 import { Personaggio } from './personaggio.js';
 import { $, speak, sleep, clamp } from './core.js';
 
-export async function creaPersona({ nome, skin, altezza, capelli = null }) {
-  const p = await Personaggio.crea({ altezza, skin });
+// ogni persona di casa ha il suo aspetto (aspetto.js); skin e capelli restano solo per i personaggi senza aspetto
+const ASPETTO_DI = { 'Mamma': 'mamma', 'Papà': 'papa', 'Leo': 'leo', 'Giulia': 'giulia' };
+export async function creaPersona({ nome, skin, altezza, capelli = null, aspetto = ASPETTO_DI[nome] || null }) {
+  const p = await Personaggio.crea({ altezza, skin, aspetto });
   p.nome = nome; p.altezza = altezza; p.root.visible = false;
-  if (capelli) aggiungiCapelli(p, capelli);
+  if (capelli && !p.viso) aggiungiCapelli(p, capelli);
+  if (p.viso) p.espressione('sorriso', 0);
   return p;
 }
 
@@ -32,11 +35,11 @@ export function fumetto(p, testo) {
   const b = document.createElement('b'); b.textContent = (p.nome || '').toUpperCase(); el.appendChild(b); el.appendChild(document.createTextNode(testo));
   $('labels').appendChild(el); attivi.set(p, el); return el;
 }
-export function togli(p) { const el = attivi.get(p); if (el) { el.remove(); attivi.delete(p); } }
+export function togli(p) { const el = attivi.get(p); if (el) { el.remove(); attivi.delete(p); if (p.parla) p.parla(false); } }
 export function zittisci() { for (const p of [...attivi.keys()]) togli(p); }
 // mostra il fumetto, lo legge a voce e aspetta il tempo di leggerlo
 export async function parla(p, testo, { ms = 0, voce = true, resta = false } = {}) {
-  const el = fumetto(p, testo); if (voce) speak(testo);
+  const el = fumetto(p, testo); if (voce) speak(testo); if (p.parla) p.parla(true);
   await sleep(ms || clamp(1500 + testo.length * 58, 2300, 6500));
   if (!resta && attivi.get(p) === el) togli(p);
 }

@@ -12,6 +12,7 @@ function caricaImmagine(src) {
 
 export class Volto {
   static async crea(personaggio, skin) {
+    if (personaggio.viso) return personaggio.viso;   // personaggi con aspetto: viso 3D (aspetto.js), stessa interfaccia set(umore, rossore)
     const img = await caricaImmagine(BASE + 'personaggio/skins/' + skin + '.png');
     return new Volto(personaggio, img);
   }
