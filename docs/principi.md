@@ -142,6 +142,10 @@ La musica di sottofondo ha due versioni dello stesso tema, una calma e una tesa,
 Quattro enigmi di tipo diverso (codice di simboli, circuito, melodia da ripetere, mosaico), in ordine di difficoltà. L'indizio sta su un oggetto del mondo, il biglietto del nonno, e l'aiuto di una persona lo cambia in modo visibile: la macchia sparisce, sul biglietto compaiono le note. Il premio finale non sono punti: è una lettera e una cosa da fare insieme.
 *Dove:* `js/enigmi.js`, `js/scatola.js`, `finale` in `js/aiuto.js`.
 
+### 2.16 Personaggi con un carattere riconoscibile, anche nel viso
+Ogni persona della storia si riconosce a colpo d'occhio e "si comporta" come è fatta: proporzioni (i bambini hanno la testa più grande, gli adulti più piccola), acconciatura, vestiti, colori, e un modo suo di stare fermo (chi è vivace dondola e si guarda intorno di più, chi è calmo meno). Lo stile resta cartoon ma verosimile: niente mascotte, persone credibili di casa. Il viso è la parte più importante per l'ABA: le emozioni devono leggersi bene anche da lontano (sopracciglia, palpebre, bocca, rossore) e anche il corpo le mostra (spalle che salgono, testa bassa, respiro corto), così lo stato interno è uno stimolo visibile e coerente con la barra e con i segnali scritti.
+*Dove:* `js/aspetto.js` (`ASPETTI`, `Viso`), `js/personaggio.js` (`carattereVivo`).
+
 ---
 
 ## 3. Principi tecnici
@@ -155,7 +159,9 @@ Pagina web senza passaggi di compilazione per il gioco principale: `index.html` 
 | `core.js` | configurazione, salvataggio, audio, didascalie, tween, dissolvenza a nero | sì |
 | `assets.js` | caricamento e cache dei glTF, cloni con scheletro | sì |
 | `personaggio.js` | personaggio animato: camminata, animazioni con dissolvenza, pose composte | sì |
-| `volto.js` | espressioni del viso dipinte sulla texture | sì, per i personaggi Kenney |
+| `aspetto.js` | aspetto dei personaggi costruito in codice sullo scheletro Kenney: corpo, vestiti, capelli, viso 3D con espressioni (`set(umore, rossore)`, `parla(on)`) | sì: un personaggio nuovo è una voce in `ASPETTI` |
+| `grafica.js` | luce riflessa d'ambiente (PMREM da una stanza finta) e taratura delle luci | sì |
+| `volto.js` | espressioni del viso dipinte sulla texture | solo per i vecchi personaggi Kenney con skin |
 | `rabbia.js` | stato emotivo continuo 0–100 con zone, picchi e soglie | sì, per ogni emozione a livelli |
 | `persone.js` | altre persone (stesso scheletro, altra skin e statura) e fumetti | sì |
 | `terapista.js` | impostazioni, grafico, tabella, esportazione | sì, cambiando i campi |
@@ -177,6 +183,9 @@ Si possono creare pose nuove unendo tracce di clip diverse: "seduto rilassato" =
 
 ### 3.5 Espressioni sulla texture
 Si copia l'atlante della skin in un canvas, si coprono i tratti originali con il colore della pelle, si applica il rossore con `multiply` e si disegnano i tratti nuovi. Si ridisegna solo quando cambia l'umore o l'intensità (arrotondata a decimi). Le coordinate del viso sono nel modulo.
+
+### 3.5b Personaggi disegnati in codice sullo stesso scheletro
+Lo scheletro e le animazioni Kenney restano (camminata, corsa, seduto, pugno, calcio…), la pelle a blocchi si nasconde e ogni osso riceve forme morbide (tubi arrotondati, solidi di rotazione per il busto, sfere deformate per la testa) agganciate con `attach` nella posa di legame. Vantaggi: nessun file nuovo da caricare, animazioni condivise da tutti, proporzioni e vestiti diversi per ogni personaggio, e un viso vero in 3D: occhi con iride dipinta che si muovono, palpebre che sbattono e si inclinano, sopracciglia mobili, bocca e guance disegnate su una "maschera" che ha la stessa forma della testa (`formaTesta`). Lo strato di carattere (respiro, dondolio, spalle tese, testa che accompagna le parole) si somma all'animazione dopo il mixer e si toglie prima del fotogramma successivo, così non si accumula. Attenzione ai segni: con il personaggio girato verso +z, il suo lato sinistro è +x; per abbassare l'angolo interno di sopracciglio e palpebra la rotazione z è `lato × angolo`.
 
 ### 3.6 Arredi e misure
 Mobili KayKit (CC0) in scala 0,6–0,75 e Kenney Furniture Kit (CC0) portati a una misura precisa con `Box3`. Niente a occhio: `Box3` per appoggiare gli oggetti e definire gli ostacoli, un raggio dall'alto (`Raycaster`) per l'altezza vera di una seduta, perché il riquadro di un divano comprende schienale e braccioli.
